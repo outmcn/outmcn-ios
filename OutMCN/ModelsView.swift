@@ -69,6 +69,7 @@ struct ModelsContentView: View {
                 toast = (saved, saved.contains("失败"))
                 load()
             }
+            .id(editing?.id ?? (isDuplicate ? "dup" : "new"))
         }
         .overlay(toastOverlay)
         .confirmationDialog(
@@ -262,17 +263,39 @@ struct ModelFormView: View {
     let onDone: (String) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var name = ""
-    @State private var modelID = ""
-    @State private var modelOptions: [String] = []
-    @State private var baseURL = ""
-    @State private var apiKey = ""
-    @State private var apiMode = "chat_completions"
+    @State private var name: String
+    @State private var modelID: String
+    @State private var modelOptions: [String]
+    @State private var baseURL: String
+    @State private var apiKey: String
+    @State private var apiMode: String
     @State private var fetching = false
     @State private var saving = false
     @State private var errorMsg: String?
 
     private let modes = ["chat_completions", "responses"]
+
+    // init 直接填充 @State 初始值：避免 sheet 复用旧实例导致弹窗空白
+    init(model: ModelInfo?, isDuplicate: Bool, onDone: @escaping (String) -> Void) {
+        self.model = model
+        self.isDuplicate = isDuplicate
+        self.onDone = onDone
+        if let m = model {
+            _name = State(initialValue: m.name)
+            _modelID = State(initialValue: m.model)
+            _modelOptions = State(initialValue: [m.model])
+            _baseURL = State(initialValue: m.base_url)
+            _apiKey = State(initialValue: m.api_key)
+            _apiMode = State(initialValue: m.api_mode ?? "chat_completions")
+        } else {
+            _name = State(initialValue: "")
+            _modelID = State(initialValue: "")
+            _modelOptions = State(initialValue: [])
+            _baseURL = State(initialValue: "")
+            _apiKey = State(initialValue: "")
+            _apiMode = State(initialValue: "chat_completions")
+        }
+    }
 
     var body: some View {
         NavigationView {
@@ -384,16 +407,6 @@ struct ModelFormView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(saving ? "保存中…" : "保存") { save() }
                         .disabled(saving || modelID.isEmpty)
-                }
-            }
-            .onAppear {
-                if let m = model {
-                    name = m.name
-                    modelID = m.model
-                    modelOptions = [m.model]
-                    baseURL = m.base_url
-                    apiKey = m.api_key
-                    apiMode = m.api_mode ?? "chat_completions"
                 }
             }
         }
