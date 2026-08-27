@@ -11,13 +11,13 @@ struct GatewaysTabView: View {
 
 struct GatewaysContentView: View {
     @State private var gateways: [GatewayInfo] = []
+    @State private var models: [ModelInfo] = []
     @State private var loading = true
     @State private var errorMsg: String?
     @State private var busyService: String?
     @State private var toast: String?
 
     // ---- Codex ----
-    @State private var models: [ModelInfo] = []
     @State private var codexModel: String = ""
     @State private var codexProvider: String = ""
     @State private var codexReasoning: String = ""
@@ -98,7 +98,28 @@ struct GatewaysContentView: View {
                 Text(online ? "运行中" : "已停止")
                     .font(.caption).foregroundColor(online ? .green : .red)
             }
+            if let m = g.model?.model, !m.isEmpty {
+                Text("当前模型：\(m)").font(.caption).foregroundColor(.secondary)
+            }
             HStack(spacing: 10) {
+                Picker("模型", selection: switchSelection(for: g)) {
+                    Text("选择模型").tag("")
+                    ForEach(models) { m in
+                        Text("\(m.name)").tag(m.id)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+                .frame(maxWidth: .infinity)
+                .disabled(busyService == g.service)
+
+                Button("切换") {
+                    let sid = switchSelection(for: g)
+                    guard !sid.wrappedValue.isEmpty else { return }
+                    act(g.service, action: "switch", modelID: sid.wrappedValue)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(busyService == g.service || switchSelection(for: g).wrappedValue.isEmpty)
+
                 Button(online ? "停止" : "启动") {
                     act(g.service, action: online ? "stop" : "start")
                 }
@@ -111,6 +132,15 @@ struct GatewaysContentView: View {
             }
         }
         .padding(.vertical, 4)
+    }
+
+    // 每个网关一行的切换模型选中态（Dictionary @State）
+    @State private var switchSelections: [String: String] = [:]
+    private func switchSelection(for g: GatewayInfo) -> Binding<String> {
+        Binding(
+            get: { switchSelections[g.service] ?? "" },
+            set: { switchSelections[g.service] = $0 }
+        )
     }
 
     @ViewBuilder private var toastOverlay: some View {
@@ -153,11 +183,16 @@ struct GatewaysContentView: View {
         }
     }
 
-    private func act(_ service: String, action: String) {
+    private func act(_ service: String, action: String, modelID: String? = nil) {
         busyService = service
         Task {
             do {
-                let msg = try await APIClient.shared.gatewayService(service, action: action)
+                let msg: String
+                if action == "switch", let mid = modelID {
+                    msg = try await APIClient.shared.applyModel(gateway: service, modelID: mid)
+                } else {
+                    msg = try await APIClient.shared.gatewayService(service, action: action)
+                }
                 DispatchQueue.main.async {
                     busyService = nil
                     toast = msg
