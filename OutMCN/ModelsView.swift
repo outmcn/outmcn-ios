@@ -280,7 +280,7 @@ struct ModelFormView: View {
         NavigationView {
             Form {
                 Section(header: Text("基本信息")) {
-                    TextField("名称（如：TBTK）", text: $name)
+                    TextField("名称", text: $name)
                         .autocorrectionDisabled()
                 }
                 Section(header: Text("模型 ID（从获取结果中选择）")) {
@@ -292,7 +292,7 @@ struct ModelFormView: View {
                     .disabled(modelOptions.isEmpty)
                 }
                 Section(header: Text("连接")) {
-                    TextField("Base URL（如：https://tbtk.asia/v1）", text: $baseURL)
+                    TextField("Base URL", text: $baseURL)
                         .keyboardType(.URL)
                         .autocorrectionDisabled()
                         .autocapitalization(.none)
