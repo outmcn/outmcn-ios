@@ -82,6 +82,7 @@ struct SettingsTabView: View {
     @EnvironmentObject var session: SessionStore
     @State private var confirmLogout = false
     @State private var showAddModel = false
+    @State private var addModelID = UUID() // 每次打开强制 sheet 重建
     @State private var chatRunning = false
     @State private var chatBusy = false
     @State private var chatLoaded = false
@@ -139,6 +140,7 @@ struct SettingsTabView: View {
 
                         // 添加模型入口
                         Button {
+                            addModelID = UUID()
                             showAddModel = true
                         } label: {
                             HStack {
@@ -162,6 +164,7 @@ struct SettingsTabView: View {
                             ModelFormView(model: nil, isDuplicate: false) { _ in
                                 showAddModel = false
                             }
+                            .id(addModelID)
                         }
 
                         // 账号卡片

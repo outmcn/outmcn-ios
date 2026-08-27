@@ -14,9 +14,17 @@ struct ModelsContentView: View {
     @State private var showForm = false
     @State private var editing: ModelInfo?
     @State private var isDuplicate = false // 复制模式：预填字段但作为新模型
+    @State private var formID = UUID() // 每次打开表单生成新 id，强制 sheet 重建
     @State private var busyID: String?
     @State private var toast: (String, Bool)? // (text, isError)
     @State private var pendingDelete: ModelInfo?
+
+    private func openForm(_ m: ModelInfo?, duplicate: Bool) {
+        editing = m
+        isDuplicate = duplicate
+        formID = UUID()
+        showForm = true
+    }
 
     var body: some View {
         ZStack {
@@ -69,7 +77,7 @@ struct ModelsContentView: View {
                 toast = (saved, saved.contains("失败"))
                 load()
             }
-            .id(editing?.id ?? (isDuplicate ? "dup" : "new"))
+            .id(formID)
         }
         .overlay(toastOverlay)
         .confirmationDialog(
@@ -207,16 +215,12 @@ struct ModelsContentView: View {
     }
 
     private func edit(_ m: ModelInfo) {
-        editing = m
-        isDuplicate = false
-        showForm = true
+        openForm(m, duplicate: false)
     }
 
     private func duplicate(_ m: ModelInfo) {
         // 拷贝一个相同的模型到添加模型表单（可修改后保存）
-        editing = m
-        isDuplicate = true
-        showForm = true
+        openForm(m, duplicate: true)
     }
 
     private func remove(_ m: ModelInfo) {
