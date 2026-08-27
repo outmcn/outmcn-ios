@@ -16,8 +16,9 @@ struct ModelsContentView: View {
     @State private var errorMsg: String?
     @State private var showForm = false
     @State private var editing: ModelInfo?
+    @State private var isDuplicate = false // 复制模式：预填字段但作为新模型
     @State private var busyID: String?
-    @State private var toast: String?
+    @State private var toast: (String, Bool)? // (text, isError)
 
     var body: some View {
         List {
@@ -54,7 +55,7 @@ struct ModelsContentView: View {
                                 .foregroundColor(.blue)
                             HStack(spacing: 8) {
                                 Button {
-                                    copyModelID(m)
+                                    duplicate(m)
                                 } label: {
                                     Image(systemName: "doc.on.doc").font(.system(size: 13))
                                 }
@@ -94,16 +95,20 @@ struct ModelsContentView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 HStack(spacing: 14) {
                     Button { load() } label: { Image(systemName: "arrow.clockwise") }
-                    Button { editing = nil; showForm = true } label: {
+                    Button {
+                        editing = nil
+                        isDuplicate = false
+                        showForm = true
+                    } label: {
                         Image(systemName: "plus")
                     }
                 }
             }
         }
         .sheet(isPresented: $showForm) {
-            ModelFormView(model: editing) { saved in
+            ModelFormView(model: editing, isDuplicate: isDuplicate) { saved in
                 showForm = false
-                toast = saved
+                toast = (saved, saved.contains("失败"))
                 load()
             }
         }
@@ -113,9 +118,10 @@ struct ModelsContentView: View {
 
     @ViewBuilder private var toastOverlay: some View {
         if let t = toast {
-            Text(t).font(.system(size: 13)).foregroundColor(.white)
+            Text(t.0).font(.system(size: 13)).foregroundColor(.white)
                 .padding(.horizontal, 16).padding(.vertical, 10)
-                .background(Color.black.opacity(0.75)).cornerRadius(10)
+                .background(t.1 ? Color.red.opacity(0.9) : Color.green.opacity(0.9))
+                .cornerRadius(10)
                 .transition(.opacity)
                 .onAppear {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
@@ -139,12 +145,15 @@ struct ModelsContentView: View {
 
     private func edit(_ m: ModelInfo) {
         editing = m
+        isDuplicate = false
         showForm = true
     }
 
-    private func copyModelID(_ m: ModelInfo) {
-        UIPasteboard.general.string = m.model
-        toast = "已复制模型 ID：\(m.model)"
+    private func duplicate(_ m: ModelInfo) {
+        // 拷贝一个相同的模型到添加模型表单（可修改后保存）
+        editing = m
+        isDuplicate = true
+        showForm = true
     }
 
     private func remove(_ m: ModelInfo) {
@@ -154,11 +163,11 @@ struct ModelsContentView: View {
                 _ = try await APIClient.shared.deleteModel(m.id)
                 DispatchQueue.main.async {
                     busyID = nil
-                    toast = "已删除 \(m.name)"
+                    toast = ("已删除 \(m.name)", false)
                     load()
                 }
             } catch {
-                DispatchQueue.main.async { busyID = nil; toast = error.localizedDescription }
+                DispatchQueue.main.async { busyID = nil; toast = (error.localizedDescription, true) }
             }
         }
     }
@@ -170,12 +179,14 @@ struct ModelsContentView: View {
                 let r = try await APIClient.shared.testModel(m)
                 DispatchQueue.main.async {
                     busyID = nil
-                    toast = r.ok
-                        ? "✓ \(m.name)：\(r.message) (\(r.latency)ms)"
-                        : "✗ \(m.name)：\(r.message)"
+                    if r.ok {
+                        toast = ("连通正常 \(r.latency)ms", false)
+                    } else {
+                        toast = (r.message, true)
+                    }
                 }
             } catch {
-                DispatchQueue.main.async { busyID = nil; toast = error.localizedDescription }
+                DispatchQueue.main.async { busyID = nil; toast = (error.localizedDescription, true) }
             }
         }
     }
@@ -184,6 +195,7 @@ struct ModelsContentView: View {
 // ---------- 添加/编辑模型表单 ----------
 struct ModelFormView: View {
     let model: ModelInfo?
+    let isDuplicate: Bool
     let onDone: (String) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -246,7 +258,7 @@ struct ModelFormView: View {
                     }
                 }
             }
-            .navigationTitle(model == nil ? "添加模型" : "编辑模型")
+            .navigationTitle(model == nil ? (isDuplicate ? "复制模型" : "添加模型") : "编辑模型")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -303,12 +315,14 @@ struct ModelFormView: View {
         }
         errorMsg = nil
         saving = true
-        let info = ModelInfo(id: model?.id ?? "", name: name, model: modelID,
+        // id：编辑时保留原 id；添加/复制时留空由后端生成（m+时间戳）
+        let info = ModelInfo(id: (model != nil && !isDuplicate) ? model!.id : "",
+                             name: name, model: modelID,
                              base_url: baseURL, api_key: apiKey, api_mode: apiMode)
         Task {
             do {
                 let msg: String
-                if model == nil {
+                if model == nil || isDuplicate {
                     msg = try await APIClient.shared.createModel(info)
                 } else {
                     msg = try await APIClient.shared.updateModel(info)

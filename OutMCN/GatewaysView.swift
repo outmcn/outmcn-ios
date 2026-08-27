@@ -38,42 +38,48 @@ struct GatewaysContentView: View {
                     }
                 }
                 Section(header: Text("Codex")) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("当前模型：\(codexModel.isEmpty ? "-" : codexModel)")
-                            .font(.footnote)
-                        if !codexProvider.isEmpty {
-                            Text("Provider：\(codexProvider)").font(.caption).foregroundColor(.secondary)
-                        }
-                        if !codexReasoning.isEmpty {
-                            Text("推理强度：\(codexReasoning)").font(.caption).foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 2)
-
-                    if models.isEmpty {
-                        Text("暂无模型，请先在「模型」页添加").foregroundColor(.secondary)
-                    } else {
-                        Picker("选择模型", selection: $selectedCodexID) {
-                            Text("请选择模型").tag("")
-                            ForEach(models) { m in
-                                Text("\(m.name)（\(m.model)）").tag(m.id)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Circle().fill(Color.green).frame(width: 9, height: 9)
+                            Text("Codex").font(.headline)
+                            Spacer()
+                            if !codexModel.isEmpty {
+                                Text("当前模型：\(codexModel)")
+                                    .font(.caption).foregroundColor(.secondary)
                             }
                         }
-                        .pickerStyle(MenuPickerStyle())
-
-                        Button {
-                            applyCodex()
-                        } label: {
-                            Group {
-                                if applying {
-                                    ProgressView().frame(maxWidth: .infinity)
-                                } else {
-                                    Text("应用并重启 Codex").frame(maxWidth: .infinity)
+                        if models.isEmpty {
+                            Text("暂无模型，请先在「模型」页添加").foregroundColor(.secondary)
+                        } else {
+                            HStack(spacing: 10) {
+                                Picker("模型", selection: $selectedCodexID) {
+                                    Text("选择模型").tag("")
+                                    ForEach(models) { m in
+                                        Text("\(m.name)").tag(m.id)
+                                    }
                                 }
+                                .pickerStyle(MenuPickerStyle())
+                                .frame(maxWidth: .infinity)
+                                .disabled(applying)
+
+                                Button {
+                                    applyCodex()
+                                } label: {
+                                    Group {
+                                        if applying {
+                                            ProgressView().scaleEffect(0.7)
+                                        } else {
+                                            Text("应用").font(.system(size: 13))
+                                        }
+                                    }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .controlSize(.regular)
+                                .disabled(applying || selectedCodexID.isEmpty)
                             }
                         }
-                        .disabled(applying || selectedCodexID.isEmpty)
                     }
+                    .padding(.vertical, 4)
                 }
             }
         }
