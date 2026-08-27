@@ -109,7 +109,7 @@ struct SettingsTabView: View {
                                 Image(systemName: "bubble.left.and.bubble.right")
                                     .font(.system(size: 16))
                                     .foregroundColor(.accentColor)
-                                Text("Hermes 网页聊天").font(.system(size: 15))
+                                Text("网页会话").font(.system(size: 15))
                                 Spacer()
                                 Circle()
                                     .fill(chatRunning ? Color.green : Color.red)
@@ -211,11 +211,9 @@ struct SettingsTabView: View {
     private func loadChatState() {
         Task {
             do {
-                let r = try await APIClient.shared.fetchGateways()
+                let running = try await APIClient.shared.dashboardStatus()
                 DispatchQueue.main.async {
-                    if let g = r.gateways.first(where: { $0.service == "hermes-gateway" }) {
-                        chatRunning = g.status == "active"
-                    }
+                    chatRunning = running
                     chatLoaded = true
                 }
             } catch {
@@ -229,10 +227,10 @@ struct SettingsTabView: View {
         let action = chatRunning ? "stop" : "start"
         Task {
             do {
-                _ = try await APIClient.shared.gatewayService("hermes-gateway", action: action)
+                let r = try await APIClient.shared.dashboardAction(action)
                 DispatchQueue.main.async {
                     chatBusy = false
-                    chatRunning.toggle()
+                    chatRunning = r.running
                 }
             } catch {
                 DispatchQueue.main.async {

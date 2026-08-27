@@ -92,6 +92,16 @@ class APIClient {
         return d.message ?? d.error ?? "OK"
     }
 
+    // ---------- Dashboard 网页会话 ----------
+    func dashboardStatus() async throws -> Bool {
+        let d: DashboardResponse = try await request("/api/hm/dashboard")
+        return d.running ?? false
+    }
+    func dashboardAction(_ action: String) async throws -> (running: Bool, message: String) {
+        let d: DashboardResponse = try await request("/api/hm/dashboard", body: ["action": action], method: "POST")
+        return (d.running ?? false, d.message ?? d.error ?? "OK")
+    }
+
     // ---------- 底层 ----------
     private func request<T: Codable>(_ path: String, body: [String: Any]? = nil, method: String = "GET") async throws -> T {
         var req = URLRequest(url: URL(string: baseURL + path)!)

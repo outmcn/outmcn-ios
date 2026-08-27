@@ -79,6 +79,13 @@ struct TestConnectResponse: Codable {
     let status: Int?
 }
 
+struct DashboardResponse: Codable {
+    let ok: Bool?
+    let error: String?
+    let message: String?
+    let running: Bool?
+}
+
 struct FetchModelsResponse: Codable {
     let ok: Bool?
     let error: String?
