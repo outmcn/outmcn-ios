@@ -22,8 +22,10 @@ struct ModelsContentView: View {
         ZStack {
             Color(.systemGroupedBackground).ignoresSafeArea()
             VStack(spacing: 0) {
-                // 顶部操作行（无标题，内容直接显示在顶部）
+                // 顶部标题 + 操作行
                 HStack {
+                    Text("模型")
+                        .font(.system(size: 20, weight: .bold))
                     Spacer()
                     Button {
                         load()

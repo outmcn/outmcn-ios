@@ -22,44 +22,55 @@ struct SettingsTabView: View {
     var body: some View {
         ZStack {
             Color(.systemGroupedBackground).ignoresSafeArea()
-            ScrollView {
-                VStack(spacing: 14) {
-                    VStack(spacing: 10) {
-                        HStack {
-                            Text("账号").font(.system(size: 15))
-                            Spacer()
-                            Text(session.username).foregroundColor(.secondary).font(.system(size: 15))
-                        }
-                        Divider()
-                        Button {
-                            confirmLogout = true
-                        } label: {
+            VStack(spacing: 0) {
+                HStack {
+                    Text("设置")
+                        .font(.system(size: 20, weight: .bold))
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
+
+                ScrollView {
+                    VStack(spacing: 14) {
+                        VStack(spacing: 10) {
                             HStack {
-                                Text("退出登录").font(.system(size: 15)).foregroundColor(.red)
+                                Text("账号").font(.system(size: 15))
                                 Spacer()
+                                Text(session.username).foregroundColor(.secondary).font(.system(size: 15))
+                            }
+                            Divider()
+                            Button {
+                                confirmLogout = true
+                            } label: {
+                                HStack {
+                                    Text("退出登录").font(.system(size: 15)).foregroundColor(.red)
+                                    Spacer()
+                                }
                             }
                         }
-                    }
-                    .padding(16)
-                    .background(Color(.secondarySystemBackground))
-                    .cornerRadius(16)
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
-                    .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
+                        .padding(16)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(16)
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
+                        .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
 
-                    VStack(spacing: 6) {
-                        Text("OutMCN Tools v1.5.4").font(.system(size: 13, weight: .semibold))
-                        Text("数据与 outmcn.net 实时同步")
-                            .font(.system(size: 12))
-                            .foregroundColor(.secondary)
+                        VStack(spacing: 6) {
+                            Text("OutMCN Tools v1.5.5").font(.system(size: 13, weight: .semibold))
+                            Text("数据与 outmcn.net 实时同步")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(16)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(16)
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
+                        .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
                     }
-                    .frame(maxWidth: .infinity)
                     .padding(16)
-                    .background(Color(.secondarySystemBackground))
-                    .cornerRadius(16)
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
-                    .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
                 }
-                .padding(16)
             }
         }
         .confirmationDialog("确定退出登录？", isPresented: $confirmLogout, titleVisibility: .visible) {
