@@ -26,20 +26,12 @@ struct GatewaysContentView: View {
         ZStack {
             Color(.systemGroupedBackground).ignoresSafeArea()
             VStack(spacing: 0) {
-                // 顶部标题 + 操作行
+                // 顶部居中标题
                 HStack {
+                    Spacer()
                     Text("网关")
                         .font(.system(size: 20, weight: .bold))
                     Spacer()
-                    Button {
-                        loadAll()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 15, weight: .semibold))
-                            .frame(width: 34, height: 34)
-                            .background(Color(.secondarySystemBackground))
-                            .clipShape(Circle())
-                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -83,6 +75,9 @@ struct GatewaysContentView: View {
             Button("取消", role: .cancel) { pendingAction = nil }
         }
         .onAppear { loadAll() }
+        .onReceive(NotificationCenter.default.publisher(for: .outmcnRefreshGateways)) { _ in
+            loadAll()
+        }
     }
 
     // 每个网关一张独立卡片

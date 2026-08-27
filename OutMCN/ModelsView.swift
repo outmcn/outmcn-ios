@@ -22,31 +22,12 @@ struct ModelsContentView: View {
         ZStack {
             Color(.systemGroupedBackground).ignoresSafeArea()
             VStack(spacing: 0) {
-                // 顶部标题 + 操作行
+                // 顶部居中标题
                 HStack {
+                    Spacer()
                     Text("模型")
                         .font(.system(size: 20, weight: .bold))
                     Spacer()
-                    Button {
-                        load()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 15, weight: .semibold))
-                            .frame(width: 34, height: 34)
-                            .background(Color(.secondarySystemBackground))
-                            .clipShape(Circle())
-                    }
-                    Button {
-                        editing = nil
-                        isDuplicate = false
-                        showForm = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .semibold))
-                            .frame(width: 34, height: 34)
-                            .background(Color(.secondarySystemBackground))
-                            .clipShape(Circle())
-                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -104,6 +85,9 @@ struct ModelsContentView: View {
             Button("取消", role: .cancel) { pendingDelete = nil }
         }
         .onAppear { load() }
+        .onReceive(NotificationCenter.default.publisher(for: .outmcnRefreshModels)) { _ in
+            load()
+        }
     }
 
     // 每个模型一张独立卡片
