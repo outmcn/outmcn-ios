@@ -266,16 +266,13 @@ struct ModelFormView: View {
                 Section(header: Text("基本信息")) {
                     TextField("名称（如：TBTK）", text: $name)
                         .autocorrectionDisabled()
-                    if modelID.isEmpty && modelOptions.isEmpty {
-                        Text("请先填写下方 Base URL 和 API Key，点「获取模型」选择模型 ID").font(.caption).foregroundColor(.secondary)
-                    }
                 }
                 Section(header: Text("模型 ID（从获取结果中选择）")) {
                     Picker("模型 ID", selection: $modelID) {
                         Text(modelOptions.isEmpty ? "请先获取模型" : "请选择").tag("")
                         ForEach(modelOptions, id: \.self) { Text($0) }
                     }
-                    .pickerStyle(MenuPickerStyle())
+                    .pickerStyle(.menu)
                     .disabled(modelOptions.isEmpty)
                 }
                 Section(header: Text("连接")) {
@@ -290,16 +287,20 @@ struct ModelFormView: View {
                     } label: {
                         Group {
                             if fetching {
-                                ProgressView().frame(maxWidth: .infinity)
+                                ProgressView()
                             } else {
-                                Text("获取模型").frame(maxWidth: .infinity)
+                                Text("获取模型")
                             }
                         }
+                        .frame(maxWidth: .infinity)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.regular)
                     .disabled(fetching || baseURL.trimmingCharacters(in: .whitespaces).isEmpty)
                     Picker("API 模式", selection: $apiMode) {
                         ForEach(modes, id: \.self) { Text($0) }
                     }
+                    .pickerStyle(.menu)
                 }
                 if let e = errorMsg {
                     Section {
