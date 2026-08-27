@@ -72,22 +72,6 @@ class APIClient {
         return d.message ?? d.error ?? "OK"
     }
 
-    // ---------- 邮件系统 ----------
-    func fetchMails(q: String = "") async throws -> MailListResponse {
-        let qq = q.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        return try await request("/api/mail/list" + (qq.isEmpty ? "" : "?q=\(qq)"))
-    }
-    func syncMails() async throws -> MailSyncResponse {
-        try await request("/api/mail/sync", body: [:], method: "POST")
-    }
-    func markUsed(_ email: String) async throws -> String {
-        let d: MailSyncResponse = try await request("/api/mail/delete", body: ["email": email], method: "POST")
-        return d.error ?? "OK"
-    }
-    func receive(_ email: String) async throws -> ReceiveResponse {
-        try await request("/api/mail/v1/email/receive", body: ["email": email], method: "POST")
-    }
-
     // ---------- 底层 ----------
     private func request<T: Codable>(_ path: String, body: [String: Any]? = nil, method: String = "GET") async throws -> T {
         var req = URLRequest(url: URL(string: baseURL + path)!)

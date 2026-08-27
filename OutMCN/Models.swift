@@ -55,43 +55,4 @@ struct HMResponse: Codable {
     let message: String?
 }
 
-// ---------- 邮件系统 (Mail) ----------
-struct Mailbox: Codable, Identifiable {
-    let email: String
-    let price: String?
-    let started_at: String?
-    let status: String?
-    let deleted: Bool?
-    var id: String { email }
-}
-
-struct MailListResponse: Codable {
-    let ok: Bool?
-    let error: String?
-    let items: [Mailbox]?
-    let total: Int?
-    let used_count: Int?
-    let available_count: Int?
-}
-
-struct MailSyncResponse: Codable {
-    let ok: Bool?
-    let error: String?
-    let total: Int?
-    let db_count: Int?
-    let new_items: Int?
-}
-
-struct MailItem: Codable {
-    let received_at: String?
-    let code_match: String?
-}
-
-struct ReceiveResponse: Codable {
-    let code: String?
-    let msg: String?
-    let error: String?
-    let data: [MailItem]?
-}
-
 struct Empty: Codable {}
