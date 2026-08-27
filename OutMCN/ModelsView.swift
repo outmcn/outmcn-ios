@@ -16,6 +16,7 @@ struct ModelsContentView: View {
     @State private var isDuplicate = false // 复制模式：预填字段但作为新模型
     @State private var busyID: String?
     @State private var toast: (String, Bool)? // (text, isError)
+    @State private var pendingDelete: ModelInfo?
 
     var body: some View {
         ZStack {
@@ -87,6 +88,19 @@ struct ModelsContentView: View {
             }
         }
         .overlay(toastOverlay)
+        .confirmationDialog(
+            pendingDelete == nil ? "" : "确定删除模型 \(pendingDelete!.name)？",
+            isPresented: Binding(get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("删除", role: .destructive) {
+                if let m = pendingDelete {
+                    remove(m)
+                }
+                pendingDelete = nil
+            }
+            Button("取消", role: .cancel) { pendingDelete = nil }
+        }
         .onAppear { load() }
     }
 
@@ -150,7 +164,7 @@ struct ModelsContentView: View {
                 .controlSize(.small)
 
                 Button {
-                    remove(m)
+                    pendingDelete = m
                 } label: {
                     Text("删除").font(.system(size: 12)).foregroundColor(.red)
                 }

@@ -13,6 +13,7 @@ struct GatewaysContentView: View {
     @State private var errorMsg: String?
     @State private var busyService: String?
     @State private var toast: (String, Bool)?
+    @State private var pendingAction: (service: String, name: String, action: String)?
 
     // ---- Codex ----
     @State private var codexModel: String = ""
@@ -66,6 +67,19 @@ struct GatewaysContentView: View {
             }
         }
         .overlay(toastOverlay)
+        .confirmationDialog(
+            pendingAction == nil ? "" : (pendingAction!.action == "stop" ? "确定停止网关 \(pendingAction!.name)？" : "确定重启网关 \(pendingAction!.name)？"),
+            isPresented: Binding(get: { pendingAction != nil }, set: { if !$0 { pendingAction = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button(pendingAction?.action == "stop" ? "停止" : "重启", role: .destructive) {
+                if let p = pendingAction {
+                    act(p.service, action: p.action)
+                }
+                pendingAction = nil
+            }
+            Button("取消", role: .cancel) { pendingAction = nil }
+        }
         .onAppear { loadAll() }
     }
 
@@ -115,7 +129,11 @@ struct GatewaysContentView: View {
                 .disabled(busyService == g.service || switchSelection(for: g).wrappedValue.isEmpty)
 
                 Button(online ? "停止" : "启动") {
-                    act(g.service, action: online ? "stop" : "start")
+                    if online {
+                        pendingAction = (g.service, g.name ?? g.service, "stop")
+                    } else {
+                        act(g.service, action: "start")
+                    }
                 }
                 .font(.system(size: 13)).padding(.horizontal, 12).padding(.vertical, 7)
                 .background(Color(.secondarySystemBackground).opacity(0.6))
@@ -124,7 +142,7 @@ struct GatewaysContentView: View {
                 .disabled(busyService == g.service)
 
                 Button("重启") {
-                    act(g.service, action: "restart")
+                    pendingAction = (g.service, g.name ?? g.service, "restart")
                 }
                 .font(.system(size: 13)).padding(.horizontal, 12).padding(.vertical, 7)
                 .background(Color(.secondarySystemBackground).opacity(0.6))
