@@ -76,6 +76,7 @@ struct GatewaysContentView: View {
             HStack(spacing: 10) {
                 Circle().fill(online ? Color.green : Color.red).frame(width: 9, height: 9)
                 Text(g.name ?? g.service).font(.system(size: 16, weight: .semibold))
+                    .lineLimit(1)
                 Spacer()
                 Text(online ? "运行中" : "已停止")
                     .font(.system(size: 13))
@@ -85,8 +86,10 @@ struct GatewaysContentView: View {
                 Text("当前模型：\(m)")
                     .font(.system(size: 13))
                     .foregroundColor(.secondary)
+                    .lineLimit(1)
             }
-            HStack(spacing: 10) {
+            // 下拉框 + 切换 + 停止 + 重启 同一行
+            HStack(spacing: 8) {
                 Picker("模型", selection: switchSelection(for: g)) {
                     Text("选择模型").tag("")
                     ForEach(models) { m in
@@ -102,20 +105,19 @@ struct GatewaysContentView: View {
                     guard !sid.wrappedValue.isEmpty else { return }
                     act(g.service, action: "switch", modelID: sid.wrappedValue)
                 } label: {
-                    Text(online ? "切换" : "启动")
+                    Text("切换")
                         .font(.system(size: 13))
-                        .padding(.horizontal, 14).padding(.vertical, 7)
+                        .padding(.horizontal, 12).padding(.vertical, 7)
                         .background(Color.accentColor)
                         .foregroundColor(.white)
                         .cornerRadius(8)
                 }
-                .disabled(busyService == g.service || ((online) && switchSelection(for: g).wrappedValue.isEmpty))
-            }
-            HStack(spacing: 10) {
+                .disabled(busyService == g.service || switchSelection(for: g).wrappedValue.isEmpty)
+
                 Button(online ? "停止" : "启动") {
                     act(g.service, action: online ? "stop" : "start")
                 }
-                .font(.system(size: 13)).padding(.horizontal, 14).padding(.vertical, 7)
+                .font(.system(size: 13)).padding(.horizontal, 12).padding(.vertical, 7)
                 .background(Color(.systemBackground).opacity(0.6))
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.35)))
                 .cornerRadius(8)
@@ -124,18 +126,17 @@ struct GatewaysContentView: View {
                 Button("重启") {
                     act(g.service, action: "restart")
                 }
-                .font(.system(size: 13)).padding(.horizontal, 14).padding(.vertical, 7)
+                .font(.system(size: 13)).padding(.horizontal, 12).padding(.vertical, 7)
                 .background(Color(.systemBackground).opacity(0.6))
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.35)))
                 .cornerRadius(8)
                 .disabled(busyService == g.service || !online)
-
-                Spacer()
             }
         }
         .padding(16)
         .background(Color(.systemBackground))
         .cornerRadius(16)
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
         .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
     }
 
@@ -187,6 +188,7 @@ struct GatewaysContentView: View {
         .padding(16)
         .background(Color(.systemBackground))
         .cornerRadius(16)
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
         .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
     }
 

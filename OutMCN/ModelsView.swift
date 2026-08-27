@@ -93,59 +93,67 @@ struct ModelsContentView: View {
     // 每个模型一张独立卡片
     private func modelCard(_ m: ModelInfo) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                Text(m.name).font(.system(size: 16, weight: .semibold))
+            // 名称单行不换行 + API 模式靠右
+            HStack(spacing: 8) {
+                Text(m.name)
+                    .font(.system(size: 16, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Spacer()
                 Text(m.api_mode ?? "")
                     .font(.system(size: 11))
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(Color.blue.opacity(0.15)).cornerRadius(6)
                     .foregroundColor(.blue)
-                Spacer()
-                Button {
-                    duplicate(m)
-                } label: {
-                    Image(systemName: "doc.on.doc").font(.system(size: 14))
-                }
-                .buttonStyle(.bordered).controlSize(.small)
-
-                Button("编辑") { edit(m) }
-                    .font(.system(size: 12))
-                    .buttonStyle(.bordered).controlSize(.small)
-
-                Button {
-                    test(m)
-                } label: {
-                    if busyID == m.id {
-                        ProgressView().scaleEffect(0.7)
-                    } else {
-                        Text("测试").font(.system(size: 12))
-                    }
-                }
-                .buttonStyle(.bordered).controlSize(.small)
-                .disabled(busyID == m.id)
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text("模型 ID：\(m.model)")
                     .font(.system(.caption, design: .monospaced))
                     .foregroundColor(.secondary)
+                    .lineLimit(1)
                 Text(m.base_url)
                     .font(.system(.caption2, design: .monospaced))
                     .foregroundColor(.secondary)
                     .lineLimit(1)
             }
             Divider()
-            HStack {
-                Text("删除")
-                    .font(.system(size: 13))
-                    .foregroundColor(.red)
+            // 底部按钮行：测试 复制 编辑 删除 靠右
+            HStack(spacing: 10) {
                 Spacer()
+                Button {
+                    test(m)
+                } label: {
+                    if busyID == m.id {
+                        ProgressView().scaleEffect(0.6).frame(height: 16)
+                    } else {
+                        Text("测试").font(.system(size: 13))
+                    }
+                }
+                .disabled(busyID == m.id)
+
+                Button {
+                    duplicate(m)
+                } label: {
+                    Text("复制").font(.system(size: 13))
+                }
+
+                Button {
+                    edit(m)
+                } label: {
+                    Text("编辑").font(.system(size: 13))
+                }
+
+                Button {
+                    remove(m)
+                } label: {
+                    Text("删除").font(.system(size: 13)).foregroundColor(.red)
+                }
             }
-            .contentShape(Rectangle())
-            .onTapGesture { remove(m) }
         }
         .padding(16)
         .background(Color(.systemBackground))
         .cornerRadius(16)
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
         .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
     }
 
