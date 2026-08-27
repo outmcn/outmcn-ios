@@ -54,7 +54,7 @@ struct GatewaysContentView: View {
                             codexCard
                         }
                         .padding(.horizontal, 16)
-                        .padding(.top, 4)
+                        .padding(.top, 16)
                         .padding(.bottom, 20)
                     }
                 }
