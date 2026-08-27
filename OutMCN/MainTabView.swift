@@ -32,7 +32,7 @@ struct SettingsTabView: View {
                         confirmLogout = true
                     }
                 }
-                Section(footer: Text("OutMCN Tools v1.4.1")) {
+                Section(footer: Text("OutMCN Tools v1.4.2")) {
                     Text("数据与 outmcn.net 实时同步")
                         .font(.footnote)
                         .foregroundColor(.secondary)

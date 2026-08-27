@@ -55,7 +55,7 @@ struct GatewaysContentView: View {
                                 Picker("模型", selection: $selectedCodexID) {
                                     Text("选择模型").tag("")
                                     ForEach(models) { m in
-                                        Text("\(m.name)").tag(m.id)
+                                        Text("\(m.name) - \(m.model)").tag(m.id)
                                     }
                                 }
                                 .pickerStyle(MenuPickerStyle())
@@ -111,7 +111,7 @@ struct GatewaysContentView: View {
                 Picker("模型", selection: switchSelection(for: g)) {
                     Text("选择模型").tag("")
                     ForEach(models) { m in
-                        Text("\(m.name)").tag(m.id)
+                        Text("\(m.name) - \(m.model)").tag(m.id)
                     }
                 }
                 .pickerStyle(MenuPickerStyle())
