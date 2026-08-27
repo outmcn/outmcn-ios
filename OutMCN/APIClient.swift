@@ -65,11 +65,21 @@ class APIClient {
         let d: HMResponse = try await request("/api/hm/models/" + id, method: "DELETE")
         return d.error ?? "OK"
     }
-    func testModel(_ m: ModelInfo) async throws -> String {
-        let d: HMResponse = try await request("/api/hm/test-connect", body: [
-            "base_url": m.base_url, "api_key": m.api_key, "model": m.model
+    func testModel(_ m: ModelInfo) async throws -> (ok: Bool, message: String, latency: Int) {
+        let d: TestConnectResponse = try await request("/api/hm/test-connect", body: [
+            "base_url": m.base_url, "api_key": m.api_key
         ], method: "POST")
-        return d.message ?? d.error ?? "OK"
+        let msg = d.message ?? d.error ?? (d.ok == true ? "连通正常" : "测试失败")
+        return (d.ok == true, msg, d.latency ?? 0)
+    }
+
+    // 通过 base_url + key 获取上游模型列表
+    func fetchUpstreamModels(baseURL: String, apiKey: String) async throws -> [String] {
+        let d: FetchModelsResponse = try await request("/api/hm/fetch-models", body: [
+            "base_url": baseURL, "api_key": apiKey
+        ], method: "POST")
+        if let e = d.error, !e.isEmpty { throw APIError.message(e) }
+        return d.models ?? []
     }
 
     // ---------- Codex ----------

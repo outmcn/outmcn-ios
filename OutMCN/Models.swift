@@ -69,4 +69,18 @@ struct CodexResponse: Codable {
     let message: String?
 }
 
+struct TestConnectResponse: Codable {
+    let ok: Bool?
+    let error: String?
+    let message: String?
+    let latency: Int?
+    let status: Int?
+}
+
+struct FetchModelsResponse: Codable {
+    let ok: Bool?
+    let error: String?
+    let models: [String]?
+}
+
 struct Empty: Codable {}
