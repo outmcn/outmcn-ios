@@ -57,7 +57,7 @@ struct SettingsTabView: View {
                         .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
 
                         VStack(spacing: 6) {
-                            Text("OutMCN Tools v1.5.6").font(.system(size: 13, weight: .semibold))
+                            Text("OutMCN Tools v1.5.7").font(.system(size: 13, weight: .semibold))
                             Text("数据与 outmcn.net 实时同步")
                                 .font(.system(size: 12))
                                 .foregroundColor(.secondary)

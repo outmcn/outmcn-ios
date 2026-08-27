@@ -278,50 +278,103 @@ struct ModelFormView: View {
 
     var body: some View {
         NavigationView {
-            Form {
-                Section(header: Text("基本信息")) {
-                    TextField("名称", text: $name)
-                        .autocorrectionDisabled()
-                }
-                Section(header: Text("模型 ID（从获取结果中选择）")) {
-                    Picker("模型 ID", selection: $modelID) {
-                        Text(modelOptions.isEmpty ? "请先获取模型" : "请选择").tag("")
-                        ForEach(modelOptions, id: \.self) { Text($0) }
-                    }
-                    .pickerStyle(.menu)
-                    .disabled(modelOptions.isEmpty)
-                }
-                Section(header: Text("连接")) {
-                    TextField("Base URL", text: $baseURL)
-                        .keyboardType(.URL)
-                        .autocorrectionDisabled()
-                        .autocapitalization(.none)
-                    SecureField("API Key", text: $apiKey)
-                        .autocorrectionDisabled()
-                    Button {
-                        fetchModels()
-                    } label: {
-                        Group {
-                            if fetching {
-                                ProgressView()
-                            } else {
-                                Text("获取模型")
+            ZStack {
+                Color(.systemGroupedBackground).ignoresSafeArea()
+                ScrollView {
+                    VStack(spacing: 14) {
+                        // 基本信息卡片
+                        VStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("名称").font(.system(size: 13, weight: .medium)).foregroundColor(.secondary)
+                                TextField("名称", text: $name)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                                    .font(.system(size: 15))
+                                    .autocorrectionDisabled()
                             }
                         }
-                        .frame(maxWidth: .infinity)
+                        .padding(16)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(16)
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
+
+                        // 模型 ID 卡片
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("模型 ID（从获取结果中选择）")
+                                .font(.system(size: 13, weight: .medium)).foregroundColor(.secondary)
+                            HStack {
+                                Spacer()
+                                Picker("", selection: $modelID) {
+                                    Text(modelOptions.isEmpty ? "请先获取模型" : "请选择").tag("")
+                                    ForEach(modelOptions, id: \.self) { Text($0) }
+                                }
+                                .pickerStyle(.menu)
+                                .disabled(modelOptions.isEmpty)
+                            }
+                        }
+                        .padding(16)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(16)
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
+
+                        // 连接卡片
+                        VStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Base URL").font(.system(size: 13, weight: .medium)).foregroundColor(.secondary)
+                                TextField("Base URL", text: $baseURL)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                                    .font(.system(size: 15))
+                                    .keyboardType(.URL)
+                                    .autocorrectionDisabled()
+                                    .autocapitalization(.none)
+                            }
+                            Divider()
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("API Key").font(.system(size: 13, weight: .medium)).foregroundColor(.secondary)
+                                SecureField("API Key", text: $apiKey)
+                                    .textFieldStyle(PlainTextFieldStyle())
+                                    .font(.system(size: 15))
+                                    .autocorrectionDisabled()
+                            }
+                            Divider()
+                            Button {
+                                fetchModels()
+                            } label: {
+                                Group {
+                                    if fetching {
+                                        ProgressView()
+                                    } else {
+                                        Text("获取模型").font(.system(size: 15, weight: .semibold))
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.regular)
+                            .disabled(fetching || baseURL.trimmingCharacters(in: .whitespaces).isEmpty)
+                            Divider()
+                            HStack {
+                                Text("API 模式").font(.system(size: 15))
+                                Spacer()
+                                Picker("", selection: $apiMode) {
+                                    ForEach(modes, id: \.self) { Text($0) }
+                                }
+                                .pickerStyle(.menu)
+                            }
+                        }
+                        .padding(16)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(16)
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
+
+                        if let e = errorMsg {
+                            Text(e)
+                                .font(.system(size: 13))
+                                .foregroundColor(.red)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 4)
+                        }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.regular)
-                    .disabled(fetching || baseURL.trimmingCharacters(in: .whitespaces).isEmpty)
-                    Picker("API 模式", selection: $apiMode) {
-                        ForEach(modes, id: \.self) { Text($0) }
-                    }
-                    .pickerStyle(.menu)
-                }
-                if let e = errorMsg {
-                    Section {
-                        Text(e).font(.footnote).foregroundColor(.red)
-                    }
+                    .padding(16)
                 }
             }
             .navigationTitle(model == nil ? (isDuplicate ? "复制模型" : "添加模型") : "编辑模型")
