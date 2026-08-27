@@ -1,0 +1,46 @@
+import SwiftUI
+
+struct MainTabView: View {
+    @EnvironmentObject var session: SessionStore
+
+    var body: some View {
+        TabView {
+            GatewaysTabView()
+                .tabItem { Label("网关设置", systemImage: "server.rack") }
+            MailTabView()
+                .tabItem { Label("邮件系统", systemImage: "envelope") }
+            SettingsTabView()
+                .tabItem { Label("设置", systemImage: "gearshape") }
+        }
+    }
+}
+
+struct SettingsTabView: View {
+    @EnvironmentObject var session: SessionStore
+    @State private var confirmLogout = false
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("账号")) {
+                    LabeledContent("账号", value: session.username)
+                    Button("退出登录", role: .destructive) {
+                        confirmLogout = true
+                    }
+                }
+                Section(footer: Text("OutMCN Tools v1.0.0")) {
+                    Text("数据与 outmcn.net 实时同步")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .navigationTitle("设置")
+            .confirmationDialog("确定退出登录？", isPresented: $confirmLogout, titleVisibility: .visible) {
+                Button("退出登录", role: .destructive) {
+                    Task { await APIClient.shared.logout(); session.isLoggedIn = false }
+                }
+                Button("取消", role: .cancel) {}
+            }
+        }
+    }
+}
