@@ -124,38 +124,51 @@ struct ModelsContentView: View {
                     test(m)
                 } label: {
                     if busyID == m.id {
-                        ProgressView().scaleEffect(0.6).frame(height: 16)
+                        ProgressView().scaleEffect(0.7).frame(height: 16)
                     } else {
-                        Text("测试").font(.system(size: 12))
+                        Text("测试")
+                            .font(.system(size: 13))
+                            .padding(.horizontal, 12).padding(.vertical, 7)
                     }
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .background(Color(.secondarySystemBackground).opacity(0.6))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.35)))
+                .cornerRadius(8)
                 .disabled(busyID == m.id)
 
                 Button {
                     duplicate(m)
                 } label: {
-                    Text("复制").font(.system(size: 12))
+                    Text("复制")
+                        .font(.system(size: 13))
+                        .padding(.horizontal, 12).padding(.vertical, 7)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .background(Color(.secondarySystemBackground).opacity(0.6))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.35)))
+                .cornerRadius(8)
 
                 Button {
                     edit(m)
                 } label: {
-                    Text("编辑").font(.system(size: 12))
+                    Text("编辑")
+                        .font(.system(size: 13))
+                        .padding(.horizontal, 12).padding(.vertical, 7)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .background(Color(.secondarySystemBackground).opacity(0.6))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.35)))
+                .cornerRadius(8)
 
                 Button {
                     pendingDelete = m
                 } label: {
-                    Text("删除").font(.system(size: 12)).foregroundColor(.red)
+                    Text("删除")
+                        .font(.system(size: 13))
+                        .foregroundColor(.red)
+                        .padding(.horizontal, 12).padding(.vertical, 7)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+                .background(Color(.secondarySystemBackground).opacity(0.6))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.35)))
+                .cornerRadius(8)
             }
         }
         .padding(16)
