@@ -3,10 +3,7 @@ import UIKit
 
 struct ModelsTabView: View {
     var body: some View {
-        NavigationView {
-            ModelsContentView()
-        }
-        .navigationViewStyle(.stack)
+        ModelsContentView()
     }
 }
 
@@ -21,86 +18,63 @@ struct ModelsContentView: View {
     @State private var toast: (String, Bool)? // (text, isError)
 
     var body: some View {
-        List {
-            if loading {
-                HStack { Spacer(); ProgressView(); Spacer() }.padding(.vertical, 40)
-            } else if let e = errorMsg {
-                VStack { Text("加载失败").font(.headline); Text(e).font(.footnote).foregroundColor(.secondary) }
-                    .frame(maxWidth: .infinity).padding(.vertical, 40)
-            } else if models.isEmpty {
-                VStack(spacing: 10) {
-                    Image(systemName: "cpu").font(.largeTitle).foregroundColor(.secondary)
-                    Text("暂无模型").foregroundColor(.secondary)
-                    Text("点右上角 + 添加模型").font(.caption).foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity).padding(.vertical, 40)
-            } else {
-                ForEach(models) { m in
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(m.name).font(.body).fontWeight(.medium)
-                            Text("模型 ID：\(m.model)")
-                                .font(.system(.caption, design: .monospaced))
-                                .foregroundColor(.secondary)
-                            Text(m.base_url)
-                                .font(.system(.caption2, design: .monospaced))
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 6) {
-                            Text(m.api_mode ?? "")
-                                .font(.caption2).padding(.horizontal, 8).padding(.vertical, 3)
-                                .background(Color.blue.opacity(0.15)).cornerRadius(6)
-                                .foregroundColor(.blue)
-                            HStack(spacing: 8) {
-                                Button {
-                                    duplicate(m)
-                                } label: {
-                                    Image(systemName: "doc.on.doc").font(.system(size: 13))
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-
-                                Button("编辑") { edit(m) }
-                                    .font(.system(size: 13))
-                                    .buttonStyle(.bordered)
-                                    .controlSize(.small)
-
-                                Button {
-                                    test(m)
-                                } label: {
-                                    if busyID == m.id {
-                                        ProgressView().scaleEffect(0.7)
-                                    } else {
-                                        Text("测试").font(.system(size: 13))
-                                    }
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                                .disabled(busyID == m.id)
-                            }
-                        }
+        ZStack {
+            Color(.systemGroupedBackground).ignoresSafeArea()
+            VStack(spacing: 0) {
+                // 顶部操作行（无标题，内容直接显示在顶部）
+                HStack {
+                    Spacer()
+                    Button {
+                        load()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 34, height: 34)
+                            .background(Color(.systemBackground))
+                            .clipShape(Circle())
                     }
-                    .padding(.vertical, 2)
-                    .swipeActions(edge: .trailing) {
-                        Button("删除", role: .destructive) { remove(m) }
-                    }
-                }
-            }
-        }
-        .listStyle(InsetGroupedListStyle())
-        .navigationTitle("模型")
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 14) {
-                    Button { load() } label: { Image(systemName: "arrow.clockwise") }
                     Button {
                         editing = nil
                         isDuplicate = false
                         showForm = true
                     } label: {
                         Image(systemName: "plus")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 34, height: 34)
+                            .background(Color(.systemBackground))
+                            .clipShape(Circle())
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
+
+                if loading {
+                    Spacer()
+                    HStack { Spacer(); ProgressView(); Spacer() }
+                    Spacer()
+                } else if let e = errorMsg {
+                    Spacer()
+                    VStack { Text("加载失败").font(.headline); Text(e).font(.footnote).foregroundColor(.secondary) }
+                    Spacer()
+                } else if models.isEmpty {
+                    Spacer()
+                    VStack(spacing: 10) {
+                        Image(systemName: "cpu").font(.largeTitle).foregroundColor(.secondary)
+                        Text("暂无模型").foregroundColor(.secondary)
+                        Text("点右上角 + 添加模型").font(.caption).foregroundColor(.secondary)
+                    }
+                    Spacer()
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 14) {
+                            ForEach(models) { m in
+                                modelCard(m)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 4)
+                        .padding(.bottom, 20)
                     }
                 }
             }
@@ -114,6 +88,65 @@ struct ModelsContentView: View {
         }
         .overlay(toastOverlay)
         .onAppear { load() }
+    }
+
+    // 每个模型一张独立卡片
+    private func modelCard(_ m: ModelInfo) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Text(m.name).font(.system(size: 16, weight: .semibold))
+                Text(m.api_mode ?? "")
+                    .font(.system(size: 11))
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(Color.blue.opacity(0.15)).cornerRadius(6)
+                    .foregroundColor(.blue)
+                Spacer()
+                Button {
+                    duplicate(m)
+                } label: {
+                    Image(systemName: "doc.on.doc").font(.system(size: 14))
+                }
+                .buttonStyle(.bordered).controlSize(.small)
+
+                Button("编辑") { edit(m) }
+                    .font(.system(size: 12))
+                    .buttonStyle(.bordered).controlSize(.small)
+
+                Button {
+                    test(m)
+                } label: {
+                    if busyID == m.id {
+                        ProgressView().scaleEffect(0.7)
+                    } else {
+                        Text("测试").font(.system(size: 12))
+                    }
+                }
+                .buttonStyle(.bordered).controlSize(.small)
+                .disabled(busyID == m.id)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                Text("模型 ID：\(m.model)")
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundColor(.secondary)
+                Text(m.base_url)
+                    .font(.system(.caption2, design: .monospaced))
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+            }
+            Divider()
+            HStack {
+                Text("删除")
+                    .font(.system(size: 13))
+                    .foregroundColor(.red)
+                Spacer()
+            }
+            .contentShape(Rectangle())
+            .onTapGesture { remove(m) }
+        }
+        .padding(16)
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
     }
 
     @ViewBuilder private var toastOverlay: some View {

@@ -2,10 +2,7 @@ import SwiftUI
 
 struct GatewaysTabView: View {
     var body: some View {
-        NavigationView {
-            GatewaysContentView()
-        }
-        .navigationViewStyle(.stack)
+        GatewaysContentView()
     }
 }
 
@@ -15,7 +12,7 @@ struct GatewaysContentView: View {
     @State private var loading = true
     @State private var errorMsg: String?
     @State private var busyService: String?
-    @State private var toast: String?
+    @State private var toast: (String, Bool)?
 
     // ---- Codex ----
     @State private var codexModel: String = ""
@@ -25,87 +22,69 @@ struct GatewaysContentView: View {
     @State private var applying = false
 
     var body: some View {
-        List {
-            if loading {
-                HStack { Spacer(); ProgressView(); Spacer() }.padding(.vertical, 40)
-            } else if let e = errorMsg {
-                VStack { Text("加载失败").font(.headline); Text(e).font(.footnote).foregroundColor(.secondary) }
-                    .frame(maxWidth: .infinity).padding(.vertical, 40)
-            } else {
-                Section(header: Text("网关")) {
-                    ForEach(gateways) { g in
-                        gatewayRow(g)
+        ZStack {
+            Color(.systemGroupedBackground).ignoresSafeArea()
+            VStack(spacing: 0) {
+                // 顶部操作行（无标题，内容直接显示在顶部）
+                HStack {
+                    Spacer()
+                    Button {
+                        loadAll()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 34, height: 34)
+                            .background(Color(.systemBackground))
+                            .clipShape(Circle())
                     }
                 }
-                Section(header: Text("Codex")) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Circle().fill(Color.green).frame(width: 9, height: 9)
-                            Text("Codex").font(.headline)
-                            Spacer()
-                            if !codexModel.isEmpty {
-                                Text("当前模型：\(codexModel)")
-                                    .font(.caption).foregroundColor(.secondary)
-                            }
-                        }
-                        if models.isEmpty {
-                            Text("暂无模型，请先在「模型」页添加").foregroundColor(.secondary)
-                        } else {
-                            HStack(spacing: 10) {
-                                Picker("模型", selection: $selectedCodexID) {
-                                    Text("选择模型").tag("")
-                                    ForEach(models) { m in
-                                        Text("\(m.name) - \(m.model)").tag(m.id)
-                                    }
-                                }
-                                .pickerStyle(MenuPickerStyle())
-                                .frame(maxWidth: .infinity)
-                                .disabled(applying)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
 
-                                Button {
-                                    applyCodex()
-                                } label: {
-                                    Group {
-                                        if applying {
-                                            ProgressView().scaleEffect(0.7)
-                                        } else {
-                                            Text("应用").font(.system(size: 13))
-                                        }
-                                    }
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .controlSize(.regular)
-                                .disabled(applying || selectedCodexID.isEmpty)
+                if loading {
+                    Spacer()
+                    HStack { Spacer(); ProgressView(); Spacer() }
+                    Spacer()
+                } else if let e = errorMsg {
+                    Spacer()
+                    VStack { Text("加载失败").font(.headline); Text(e).font(.footnote).foregroundColor(.secondary) }
+                    Spacer()
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 14) {
+                            ForEach(gateways) { g in
+                                gatewayCard(g)
                             }
+                            codexCard
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 4)
+                        .padding(.bottom, 20)
                     }
-                    .padding(.vertical, 4)
                 }
-            }
-        }
-        .listStyle(InsetGroupedListStyle())
-        .navigationTitle("网关")
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button { loadAll() } label: { Image(systemName: "arrow.clockwise") }
             }
         }
         .overlay(toastOverlay)
         .onAppear { loadAll() }
     }
 
-    private func gatewayRow(_ g: GatewayInfo) -> some View {
+    // 每个网关一张独立卡片
+    private func gatewayCard(_ g: GatewayInfo) -> some View {
         let online = g.status == "active"
-        return VStack(alignment: .leading, spacing: 8) {
-            HStack {
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
                 Circle().fill(online ? Color.green : Color.red).frame(width: 9, height: 9)
-                Text(g.name ?? g.service).font(.headline)
+                Text(g.name ?? g.service).font(.system(size: 16, weight: .semibold))
                 Spacer()
                 Text(online ? "运行中" : "已停止")
-                    .font(.caption).foregroundColor(online ? .green : .red)
+                    .font(.system(size: 13))
+                    .foregroundColor(online ? .green : .red)
             }
             if let m = g.model?.model, !m.isEmpty {
-                Text("当前模型：\(m)").font(.caption).foregroundColor(.secondary)
+                Text("当前模型：\(m)")
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
             }
             HStack(spacing: 10) {
                 Picker("模型", selection: switchSelection(for: g)) {
@@ -118,42 +97,105 @@ struct GatewaysContentView: View {
                 .frame(maxWidth: .infinity)
                 .disabled(busyService == g.service)
 
-                Button("切换") {
+                Button {
                     let sid = switchSelection(for: g)
                     guard !sid.wrappedValue.isEmpty else { return }
                     act(g.service, action: "switch", modelID: sid.wrappedValue)
+                } label: {
+                    Text(online ? "切换" : "启动")
+                        .font(.system(size: 13))
+                        .padding(.horizontal, 14).padding(.vertical, 7)
+                        .background(Color.accentColor)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(busyService == g.service || switchSelection(for: g).wrappedValue.isEmpty)
-
+                .disabled(busyService == g.service || ((online) && switchSelection(for: g).wrappedValue.isEmpty))
+            }
+            HStack(spacing: 10) {
                 Button(online ? "停止" : "启动") {
                     act(g.service, action: online ? "stop" : "start")
                 }
-                .buttonStyle(.bordered)
+                .font(.system(size: 13)).padding(.horizontal, 14).padding(.vertical, 7)
+                .background(Color(.systemBackground).opacity(0.6))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.35)))
+                .cornerRadius(8)
                 .disabled(busyService == g.service)
 
-                Button("重启") { act(g.service, action: "restart") }
-                    .buttonStyle(.bordered)
-                    .disabled(busyService == g.service || !online)
+                Button("重启") {
+                    act(g.service, action: "restart")
+                }
+                .font(.system(size: 13)).padding(.horizontal, 14).padding(.vertical, 7)
+                .background(Color(.systemBackground).opacity(0.6))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.35)))
+                .cornerRadius(8)
+                .disabled(busyService == g.service || !online)
+
+                Spacer()
             }
         }
-        .padding(.vertical, 4)
+        .padding(16)
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
     }
 
-    // 每个网关一行的切换模型选中态（Dictionary @State）
-    @State private var switchSelections: [String: String] = [:]
-    private func switchSelection(for g: GatewayInfo) -> Binding<String> {
-        Binding(
-            get: { switchSelections[g.service] ?? "" },
-            set: { switchSelections[g.service] = $0 }
-        )
+    // Codex 也是独立卡片
+    private var codexCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Circle().fill(Color.green).frame(width: 9, height: 9)
+                Text("Codex").font(.system(size: 16, weight: .semibold))
+                Spacer()
+                if !codexModel.isEmpty {
+                    Text("当前模型：\(codexModel)")
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                }
+            }
+            if models.isEmpty {
+                Text("暂无模型，请先在「模型」页添加").foregroundColor(.secondary)
+            } else {
+                HStack(spacing: 10) {
+                    Picker("模型", selection: $selectedCodexID) {
+                        Text("选择模型").tag("")
+                        ForEach(models) { m in
+                            Text("\(m.name) - \(m.model)").tag(m.id)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    .frame(maxWidth: .infinity)
+                    .disabled(applying)
+
+                    Button {
+                        applyCodex()
+                    } label: {
+                        if applying {
+                            ProgressView().scaleEffect(0.8)
+                                .frame(minWidth: 46, minHeight: 30)
+                        } else {
+                            Text("应用").font(.system(size: 13))
+                                .padding(.horizontal, 14).padding(.vertical, 7)
+                                .background(Color.accentColor)
+                                .foregroundColor(.white)
+                                .cornerRadius(8)
+                        }
+                    }
+                    .disabled(applying || selectedCodexID.isEmpty)
+                }
+            }
+        }
+        .padding(16)
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
     }
 
     @ViewBuilder private var toastOverlay: some View {
         if let t = toast {
-            Text(t).font(.system(size: 13)).foregroundColor(.white)
+            Text(t.0).font(.system(size: 13)).foregroundColor(.white)
                 .padding(.horizontal, 16).padding(.vertical, 10)
-                .background(Color.black.opacity(0.75)).cornerRadius(10)
+                .background(t.1 ? Color.red.opacity(0.9) : Color.green.opacity(0.9))
+                .cornerRadius(10)
                 .transition(.opacity)
                 .onAppear {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
@@ -201,13 +243,13 @@ struct GatewaysContentView: View {
                 }
                 DispatchQueue.main.async {
                     busyService = nil
-                    toast = msg
+                    toast = (msg, msg.contains("失败"))
                     loadAll()
                 }
             } catch {
                 DispatchQueue.main.async {
                     busyService = nil
-                    toast = error.localizedDescription
+                    toast = (error.localizedDescription, true)
                 }
             }
         }
@@ -221,15 +263,24 @@ struct GatewaysContentView: View {
                 let msg = try await APIClient.shared.applyCodexModel(modelID: selectedCodexID)
                 DispatchQueue.main.async {
                     applying = false
-                    toast = msg
+                    toast = (msg, msg.contains("失败"))
                     loadAll()
                 }
             } catch {
                 DispatchQueue.main.async {
                     applying = false
-                    toast = error.localizedDescription
+                    toast = (error.localizedDescription, true)
                 }
             }
         }
+    }
+
+    // 每个网关一行的切换模型选中态（Dictionary @State）
+    @State private var switchSelections: [String: String] = [:]
+    private func switchSelection(for g: GatewayInfo) -> Binding<String> {
+        Binding(
+            get: { switchSelections[g.service] ?? "" },
+            set: { switchSelections[g.service] = $0 }
+        )
     }
 }
