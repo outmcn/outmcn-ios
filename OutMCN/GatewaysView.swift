@@ -93,11 +93,19 @@ struct GatewaysContentView: View {
                     .font(.system(size: 13))
                     .foregroundColor(online ? .green : .red)
             }
-            if let m = g.model?.model, !m.isEmpty {
-                Text("当前模型：\(m)")
-                    .font(.system(size: 13))
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
+            if let gm = g.model, let mid = gm.model, !mid.isEmpty {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("模型 ID：\(mid)")
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                    if let bu = gm.base_url, !bu.isEmpty {
+                        Text(bu)
+                            .font(.system(.caption2, design: .monospaced))
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    }
+                }
             }
             // 下拉框 + 切换 + 停止 + 重启 同一行
             HStack(spacing: 8) {
