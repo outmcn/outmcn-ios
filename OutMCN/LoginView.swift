@@ -30,7 +30,7 @@ struct LoginView: View {
                     .font(.system(size: 30, weight: .heavy))
                     .foregroundColor(.white)
 
-                Text("网关设置 · 邮件系统")
+                Text("网关 · 模型 · 设置")
                     .font(.system(size: 14))
                     .foregroundColor(.white.opacity(0.8))
 
