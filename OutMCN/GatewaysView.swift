@@ -165,15 +165,26 @@ struct GatewaysContentView: View {
 
     // Codex 也是独立卡片
     private var codexCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        // 当前 Codex 模型对应 base_url（models 里按 model 匹配）
+        let currentEntry = models.first { $0.model == codexModel }
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 Circle().fill(Color.green).frame(width: 9, height: 9)
                 Text("Codex").font(.system(size: 16, weight: .semibold))
                 Spacer()
-                if !codexModel.isEmpty {
-                    Text("当前模型：\(codexModel)")
-                        .font(.system(size: 13))
+            }
+            if !codexModel.isEmpty {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("模型 ID：\(codexModel)")
+                        .font(.system(.caption, design: .monospaced))
                         .foregroundColor(.secondary)
+                        .lineLimit(1)
+                    if let bu = currentEntry?.base_url, !bu.isEmpty {
+                        Text(bu)
+                            .font(.system(.caption2, design: .monospaced))
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    }
                 }
             }
             if models.isEmpty {
