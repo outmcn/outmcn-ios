@@ -74,6 +74,8 @@ struct TestConnectResponse: Codable {
     let error: String?
     let message: String?
     let latency: Int?
+    let reply_latency: Int?
+    let reply: String?
     let status: Int?
 }
 

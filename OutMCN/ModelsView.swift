@@ -173,7 +173,7 @@ struct ModelsContentView: View {
                 .cornerRadius(10)
                 .transition(.opacity)
                 .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3.8) {
                         withAnimation { self.toast = nil }
                     }
                 }
@@ -229,7 +229,8 @@ struct ModelsContentView: View {
                 DispatchQueue.main.async {
                     busyID = nil
                     if r.ok {
-                        toast = ("连通正常 \(r.latency)ms", false)
+                        let reply = r.reply.trimmingCharacters(in: .whitespacesAndNewlines)
+                        toast = (reply.isEmpty ? r.message : "\(r.message)｜「\(reply)」", false)
                     } else {
                         toast = (r.message, true)
                     }

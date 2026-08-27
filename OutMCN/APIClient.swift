@@ -65,12 +65,13 @@ class APIClient {
         let d: HMResponse = try await request("/api/hm/models/" + id, method: "DELETE")
         return d.error ?? "OK"
     }
-    func testModel(_ m: ModelInfo) async throws -> (ok: Bool, message: String, latency: Int) {
+    func testModel(_ m: ModelInfo) async throws -> (ok: Bool, message: String, latency: Int, reply: String) {
         let d: TestConnectResponse = try await request("/api/hm/test-connect", body: [
-            "base_url": m.base_url, "api_key": m.api_key
+            "base_url": m.base_url, "api_key": m.api_key,
+            "model": m.model, "api_mode": m.api_mode ?? "chat_completions"
         ], method: "POST")
         let msg = d.message ?? d.error ?? (d.ok == true ? "连通正常" : "测试失败")
-        return (d.ok == true, msg, d.latency ?? 0)
+        return (d.ok == true, msg, d.latency ?? 0, d.reply ?? "")
     }
 
     // 通过 base_url + key 获取上游模型列表
