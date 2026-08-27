@@ -41,20 +41,20 @@ struct SettingsTabView: View {
                         }
                     }
                     .padding(16)
-                    .background(Color(.systemBackground))
+                    .background(Color(.secondarySystemBackground))
                     .cornerRadius(16)
                     .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
                     .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
 
                     VStack(spacing: 6) {
-                        Text("OutMCN Tools v1.5.1").font(.system(size: 13, weight: .semibold))
+                        Text("OutMCN Tools v1.5.2").font(.system(size: 13, weight: .semibold))
                         Text("数据与 outmcn.net 实时同步")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(16)
-                    .background(Color(.systemBackground))
+                    .background(Color(.secondarySystemBackground))
                     .cornerRadius(16)
                     .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
                     .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)

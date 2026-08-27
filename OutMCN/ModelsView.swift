@@ -30,7 +30,7 @@ struct ModelsContentView: View {
                         Image(systemName: "arrow.clockwise")
                             .font(.system(size: 15, weight: .semibold))
                             .frame(width: 34, height: 34)
-                            .background(Color(.systemBackground))
+                            .background(Color(.secondarySystemBackground))
                             .clipShape(Circle())
                     }
                     Button {
@@ -41,7 +41,7 @@ struct ModelsContentView: View {
                         Image(systemName: "plus")
                             .font(.system(size: 15, weight: .semibold))
                             .frame(width: 34, height: 34)
-                            .background(Color(.systemBackground))
+                            .background(Color(.secondarySystemBackground))
                             .clipShape(Circle())
                     }
                 }
@@ -126,32 +126,40 @@ struct ModelsContentView: View {
                     if busyID == m.id {
                         ProgressView().scaleEffect(0.6).frame(height: 16)
                     } else {
-                        Text("测试").font(.system(size: 13))
+                        Text("测试").font(.system(size: 12))
                     }
                 }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
                 .disabled(busyID == m.id)
 
                 Button {
                     duplicate(m)
                 } label: {
-                    Text("复制").font(.system(size: 13))
+                    Text("复制").font(.system(size: 12))
                 }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
 
                 Button {
                     edit(m)
                 } label: {
-                    Text("编辑").font(.system(size: 13))
+                    Text("编辑").font(.system(size: 12))
                 }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
 
                 Button {
                     remove(m)
                 } label: {
-                    Text("删除").font(.system(size: 13)).foregroundColor(.red)
+                    Text("删除").font(.system(size: 12)).foregroundColor(.red)
                 }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
             }
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(Color(.secondarySystemBackground))
         .cornerRadius(16)
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
         .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)

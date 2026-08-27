@@ -34,7 +34,7 @@ struct GatewaysContentView: View {
                         Image(systemName: "arrow.clockwise")
                             .font(.system(size: 15, weight: .semibold))
                             .frame(width: 34, height: 34)
-                            .background(Color(.systemBackground))
+                            .background(Color(.secondarySystemBackground))
                             .clipShape(Circle())
                     }
                 }
@@ -118,7 +118,7 @@ struct GatewaysContentView: View {
                     act(g.service, action: online ? "stop" : "start")
                 }
                 .font(.system(size: 13)).padding(.horizontal, 12).padding(.vertical, 7)
-                .background(Color(.systemBackground).opacity(0.6))
+                .background(Color(.secondarySystemBackground).opacity(0.6))
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.35)))
                 .cornerRadius(8)
                 .disabled(busyService == g.service)
@@ -127,14 +127,14 @@ struct GatewaysContentView: View {
                     act(g.service, action: "restart")
                 }
                 .font(.system(size: 13)).padding(.horizontal, 12).padding(.vertical, 7)
-                .background(Color(.systemBackground).opacity(0.6))
+                .background(Color(.secondarySystemBackground).opacity(0.6))
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.secondary.opacity(0.35)))
                 .cornerRadius(8)
                 .disabled(busyService == g.service || !online)
             }
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(Color(.secondarySystemBackground))
         .cornerRadius(16)
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
         .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
@@ -186,7 +186,7 @@ struct GatewaysContentView: View {
             }
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(Color(.secondarySystemBackground))
         .cornerRadius(16)
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
         .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
