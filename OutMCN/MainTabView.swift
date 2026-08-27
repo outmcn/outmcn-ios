@@ -7,8 +7,8 @@ struct MainTabView: View {
         TabView {
             GatewaysTabView()
                 .tabItem { Label("网关", systemImage: "server.rack") }
-            CodexTabView()
-                .tabItem { Label("Codex", systemImage: "terminal") }
+            ModelsTabView()
+                .tabItem { Label("模型", systemImage: "cpu") }
             SettingsTabView()
                 .tabItem { Label("设置", systemImage: "gearshape") }
         }
@@ -32,7 +32,7 @@ struct SettingsTabView: View {
                         confirmLogout = true
                     }
                 }
-                Section(footer: Text("OutMCN Tools v1.2.0")) {
+                Section(footer: Text("OutMCN Tools v1.3.0")) {
                     Text("数据与 outmcn.net 实时同步")
                         .font(.footnote)
                         .foregroundColor(.secondary)

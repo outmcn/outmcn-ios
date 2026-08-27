@@ -11,11 +11,18 @@ struct GatewaysTabView: View {
 
 struct GatewaysContentView: View {
     @State private var gateways: [GatewayInfo] = []
-    @State private var models: [ModelInfo] = []
     @State private var loading = true
     @State private var errorMsg: String?
     @State private var busyService: String?
     @State private var toast: String?
+
+    // ---- Codex ----
+    @State private var models: [ModelInfo] = []
+    @State private var codexModel: String = ""
+    @State private var codexProvider: String = ""
+    @State private var codexReasoning: String = ""
+    @State private var selectedCodexID: String = ""
+    @State private var applying = false
 
     var body: some View {
         List {
@@ -27,41 +34,83 @@ struct GatewaysContentView: View {
             } else {
                 Section(header: Text("网关")) {
                     ForEach(gateways) { g in
-                        GatewayRow(gateway: g, models: models, busy: busyService == g.service) { action, mid in
-                            act(g.service, action: action, modelID: mid)
-                        }
+                        gatewayRow(g)
                     }
                 }
-                Section(header: Text("模型")) {
+                Section(header: Text("Codex")) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("当前模型：\(codexModel.isEmpty ? "-" : codexModel)")
+                            .font(.footnote)
+                        if !codexProvider.isEmpty {
+                            Text("Provider：\(codexProvider)").font(.caption).foregroundColor(.secondary)
+                        }
+                        if !codexReasoning.isEmpty {
+                            Text("推理强度：\(codexReasoning)").font(.caption).foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 2)
+
                     if models.isEmpty {
-                        Text("暂无模型").foregroundColor(.secondary)
+                        Text("暂无模型，请先在「模型」页添加").foregroundColor(.secondary)
                     } else {
-                        ForEach(models) { m in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(m.name).font(.body)
-                                    Text(m.model).font(.caption).foregroundColor(.secondary)
-                                }
-                                Spacer()
-                                Text(m.api_mode ?? "")
-                                    .font(.caption2).padding(.horizontal, 8).padding(.vertical, 3)
-                                    .background(Color.blue.opacity(0.15)).cornerRadius(6)
-                                    .foregroundColor(.blue)
+                        Picker("选择模型", selection: $selectedCodexID) {
+                            Text("请选择模型").tag("")
+                            ForEach(models) { m in
+                                Text("\(m.name)（\(m.model)）").tag(m.id)
                             }
                         }
+                        .pickerStyle(MenuPickerStyle())
+
+                        Button {
+                            applyCodex()
+                        } label: {
+                            Group {
+                                if applying {
+                                    ProgressView().frame(maxWidth: .infinity)
+                                } else {
+                                    Text("应用并重启 Codex").frame(maxWidth: .infinity)
+                                }
+                            }
+                        }
+                        .disabled(applying || selectedCodexID.isEmpty)
                     }
                 }
             }
         }
         .listStyle(InsetGroupedListStyle())
-        .navigationTitle("网关设置")
+        .navigationTitle("网关")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button { load() } label: { Image(systemName: "arrow.clockwise") }
+                Button { loadAll() } label: { Image(systemName: "arrow.clockwise") }
             }
         }
         .overlay(toastOverlay)
-        .onAppear { load() }
+        .onAppear { loadAll() }
+    }
+
+    private func gatewayRow(_ g: GatewayInfo) -> some View {
+        let online = g.status == "active"
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Circle().fill(online ? Color.green : Color.red).frame(width: 9, height: 9)
+                Text(g.name ?? g.service).font(.headline)
+                Spacer()
+                Text(online ? "运行中" : "已停止")
+                    .font(.caption).foregroundColor(online ? .green : .red)
+            }
+            HStack(spacing: 10) {
+                Button(online ? "停止" : "启动") {
+                    act(g.service, action: online ? "stop" : "start")
+                }
+                .buttonStyle(.bordered)
+                .disabled(busyService == g.service)
+
+                Button("重启") { act(g.service, action: "restart") }
+                    .buttonStyle(.bordered)
+                    .disabled(busyService == g.service || !online)
+            }
+        }
+        .padding(.vertical, 4)
     }
 
     @ViewBuilder private var toastOverlay: some View {
@@ -78,14 +127,21 @@ struct GatewaysContentView: View {
         }
     }
 
-    private func load() {
+    private func loadAll() {
         loading = true; errorMsg = nil
         Task {
             do {
-                let r = try await APIClient.shared.fetchGateways()
+                async let gws = APIClient.shared.fetchGateways()
+                async let ms = APIClient.shared.fetchModels()
+                async let cx = APIClient.shared.fetchCodexConfig()
+                let (gwResult, modelList, codex) = try await (gws, ms, cx)
                 DispatchQueue.main.async {
-                    gateways = r.gateways
-                    models = r.models
+                    gateways = gwResult.gateways
+                    models = modelList
+                    codexModel = codex.model ?? ""
+                    codexProvider = codex.provider ?? ""
+                    codexReasoning = codex.reasoning ?? ""
+                    selectedCodexID = ""
                     loading = false
                 }
             } catch {
@@ -97,20 +153,15 @@ struct GatewaysContentView: View {
         }
     }
 
-    private func act(_ service: String, action: String, modelID: String? = nil) {
+    private func act(_ service: String, action: String) {
         busyService = service
         Task {
             do {
-                let msg: String
-                if action == "switch", let mid = modelID {
-                    msg = try await APIClient.shared.applyModel(gateway: service, modelID: mid)
-                } else {
-                    msg = try await APIClient.shared.gatewayService(service, action: action)
-                }
+                let msg = try await APIClient.shared.gatewayService(service, action: action)
                 DispatchQueue.main.async {
                     busyService = nil
                     toast = msg
-                    load()
+                    loadAll()
                 }
             } catch {
                 DispatchQueue.main.async {
@@ -120,59 +171,24 @@ struct GatewaysContentView: View {
             }
         }
     }
-}
 
-struct GatewayRow: View {
-    let gateway: GatewayInfo
-    let models: [ModelInfo]
-    let busy: Bool
-    let onAction: (String, String?) -> Void
-
-    @State private var selectedModel: String = ""
-
-    var online: Bool { gateway.status == "active" }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Circle().fill(online ? Color.green : Color.red).frame(width: 9, height: 9)
-                Text(gateway.name ?? gateway.service).font(.headline)
-                Spacer()
-                Text(online ? "运行中" : "已停止")
-                    .font(.caption).foregroundColor(online ? .green : .red)
-            }
-            if let m = gateway.model?.model, !m.isEmpty {
-                Text("当前模型：\(m)").font(.caption).foregroundColor(.secondary)
-            }
-            HStack(spacing: 10) {
-                Picker("模型", selection: $selectedModel) {
-                    Text("选择模型").tag("")
-                    ForEach(models) { m in
-                        Text("\(m.name)").tag(m.id)
-                    }
+    private func applyCodex() {
+        guard !selectedCodexID.isEmpty else { return }
+        applying = true
+        Task {
+            do {
+                let msg = try await APIClient.shared.applyCodexModel(modelID: selectedCodexID)
+                DispatchQueue.main.async {
+                    applying = false
+                    toast = msg
+                    loadAll()
                 }
-                .pickerStyle(MenuPickerStyle())
-                .frame(maxWidth: .infinity)
-                .disabled(busy)
-
-                Button("切换") {
-                    guard !selectedModel.isEmpty else { return }
-                    onAction("switch", selectedModel)
+            } catch {
+                DispatchQueue.main.async {
+                    applying = false
+                    toast = error.localizedDescription
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(busy || selectedModel.isEmpty)
-
-                Button(online ? "停止" : "启动") {
-                    onAction(online ? "stop" : "start", nil)
-                }
-                .buttonStyle(.bordered)
-                .disabled(busy)
-
-                Button("重启") { onAction("restart", nil) }
-                    .buttonStyle(.bordered)
-                    .disabled(busy || !online)
             }
         }
-        .padding(.vertical, 4)
     }
 }
