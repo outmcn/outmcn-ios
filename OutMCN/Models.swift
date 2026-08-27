@@ -13,8 +13,14 @@ struct GatewayInfo: Codable, Identifiable {
     let service: String
     let config_path: String?
     let status: String?
-    let model: String?
+    let model: GatewayModel?
     var id: String { service }
+}
+
+struct GatewayModel: Codable {
+    let model: String?
+    let base_url: String?
+    let api_mode: String?
 }
 
 struct ModelInfo: Codable, Identifiable, Equatable {
@@ -52,7 +58,7 @@ struct HMResponse: Codable {
 // ---------- 邮件系统 (Mail) ----------
 struct Mailbox: Codable, Identifiable {
     let email: String
-    let price: Double?
+    let price: String?
     let started_at: String?
     let status: String?
     let deleted: Bool?

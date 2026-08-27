@@ -141,7 +141,7 @@ struct GatewayRow: View {
                 Text(online ? "运行中" : "已停止")
                     .font(.caption).foregroundColor(online ? .green : .red)
             }
-            if let m = gateway.model, !m.isEmpty {
+            if let m = gateway.model?.model, !m.isEmpty {
                 Text("当前模型：\(m)").font(.caption).foregroundColor(.secondary)
             }
             HStack(spacing: 10) {
