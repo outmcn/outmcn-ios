@@ -55,4 +55,18 @@ struct HMResponse: Codable {
     let message: String?
 }
 
+struct CodexConfig: Codable {
+    let ok: Bool?
+    let error: String?
+    let model: String?
+    let provider: String?
+    let reasoning: String?
+}
+
+struct CodexResponse: Codable {
+    let ok: Bool?
+    let error: String?
+    let message: String?
+}
+
 struct Empty: Codable {}

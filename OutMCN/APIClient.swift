@@ -72,6 +72,15 @@ class APIClient {
         return d.message ?? d.error ?? "OK"
     }
 
+    // ---------- Codex ----------
+    func fetchCodexConfig() async throws -> CodexConfig {
+        try await request("/api/hm/codex")
+    }
+    func applyCodexModel(modelID: String) async throws -> String {
+        let d: CodexResponse = try await request("/api/hm/codex", body: ["model_id": modelID], method: "POST")
+        return d.message ?? d.error ?? "OK"
+    }
+
     // ---------- 底层 ----------
     private func request<T: Codable>(_ path: String, body: [String: Any]? = nil, method: String = "GET") async throws -> T {
         var req = URLRequest(url: URL(string: baseURL + path)!)
