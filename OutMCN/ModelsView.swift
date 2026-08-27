@@ -8,22 +8,23 @@ struct ModelsTabView: View {
 }
 
 struct ModelsContentView: View {
+    // 表单意图：每次打开生成新 id，sheet(item:) 必然重建新实例
+    struct FormIntent: Identifiable {
+        let id = UUID()
+        let model: ModelInfo?
+        let isDuplicate: Bool
+    }
+
     @State private var models: [ModelInfo] = []
     @State private var loading = true
     @State private var errorMsg: String?
-    @State private var showForm = false
-    @State private var editing: ModelInfo?
-    @State private var isDuplicate = false // 复制模式：预填字段但作为新模型
-    @State private var formID = UUID() // 每次打开表单生成新 id，强制 sheet 重建
+    @State private var formIntent: FormIntent?
     @State private var busyID: String?
     @State private var toast: (String, Bool)? // (text, isError)
     @State private var pendingDelete: ModelInfo?
 
     private func openForm(_ m: ModelInfo?, duplicate: Bool) {
-        editing = m
-        isDuplicate = duplicate
-        formID = UUID()
-        showForm = true
+        formIntent = FormIntent(model: m, isDuplicate: duplicate)
     }
 
     var body: some View {
@@ -71,13 +72,12 @@ struct ModelsContentView: View {
                 }
             }
         }
-        .sheet(isPresented: $showForm) {
-            ModelFormView(model: editing, isDuplicate: isDuplicate) { saved in
-                showForm = false
+        .sheet(item: $formIntent) { intent in
+            ModelFormView(model: intent.model, isDuplicate: intent.isDuplicate) { saved in
+                formIntent = nil
                 toast = (saved, saved.contains("失败"))
                 load()
             }
-            .id(formID)
         }
         .overlay(toastOverlay)
         .confirmationDialog(

@@ -81,11 +81,15 @@ struct MainTabView: View {
 struct SettingsTabView: View {
     @EnvironmentObject var session: SessionStore
     @State private var confirmLogout = false
-    @State private var showAddModel = false
-    @State private var addModelID = UUID() // 每次打开强制 sheet 重建
+    @State private var addModelIntent: AddModelIntent?
     @State private var chatRunning = false
     @State private var chatBusy = false
     @State private var chatLoaded = false
+
+    // 添加模型意图：每次打开生成新 id
+    struct AddModelIntent: Identifiable {
+        let id = UUID()
+    }
 
     var body: some View {
         ZStack {
@@ -140,8 +144,7 @@ struct SettingsTabView: View {
 
                         // 添加模型入口
                         Button {
-                            addModelID = UUID()
-                            showAddModel = true
+                            addModelIntent = AddModelIntent()
                         } label: {
                             HStack {
                                 Image(systemName: "cpu")
@@ -160,11 +163,10 @@ struct SettingsTabView: View {
                             .cornerRadius(16)
                             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
                         }
-                        .sheet(isPresented: $showAddModel) {
+                        .sheet(item: $addModelIntent) { _ in
                             ModelFormView(model: nil, isDuplicate: false) { _ in
-                                showAddModel = false
+                                addModelIntent = nil
                             }
-                            .id(addModelID)
                         }
 
                         // 账号卡片
