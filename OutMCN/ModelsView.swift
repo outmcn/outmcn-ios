@@ -24,7 +24,24 @@ struct ModelsContentView: View {
     @State private var pendingDelete: ModelInfo?
 
     private func openForm(_ m: ModelInfo?, duplicate: Bool) {
-        formIntent = FormIntent(model: m, isDuplicate: duplicate)
+        // 编辑/复制：列表 api_key 已脱敏，需取完整模型（含完整 key）再打开表单
+        if let model = m {
+            Task {
+                do {
+                    let full = try await APIClient.shared.fetchFullModel(id: model.id)
+                    await MainActor.run {
+                        formIntent = FormIntent(model: full, isDuplicate: duplicate)
+                    }
+                } catch {
+                    // 取完整模型失败：用列表数据打开（key 可能脱敏，用户可重填）
+                    await MainActor.run {
+                        formIntent = FormIntent(model: model, isDuplicate: duplicate)
+                    }
+                }
+            }
+        } else {
+            formIntent = FormIntent(model: nil, isDuplicate: duplicate)
+        }
     }
 
     var body: some View {

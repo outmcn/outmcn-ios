@@ -27,6 +27,14 @@ class SessionStore: ObservableObject {
     @Published var username: String = "admin"
 
     init() {
+        // 从 Keychain 读取登录态
         isLoggedIn = APIClient.shared.token != nil
+        // 401 会话失效：自动切回登录页
+        NotificationCenter.default.addObserver(
+            forName: APIClient.sessionExpiredNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.isLoggedIn = false
+        }
     }
 }

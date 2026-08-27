@@ -5,13 +5,15 @@ class APIClient {
     static let shared = APIClient()
     let baseURL = "https://outmcn.net"
 
+    // 会话失效通知（401 时由网络层发布，根视图监听后跳登录页）
+    static let sessionExpiredNotification = Notification.Name("outmcn.session.expired")
+
     private let tokenKey = "outmcn_token"
     var token: String? {
-        get { UserDefaults.standard.string(forKey: tokenKey) }
+        get { KeychainStore.load(tokenKey) }
         set {
-            if let v = newValue { UserDefaults.standard.set(v, forKey: tokenKey) }
-            else { UserDefaults.standard.removeObject(forKey: tokenKey) }
-            UserDefaults.standard.synchronize()
+            if let v = newValue { KeychainStore.save(v, key: tokenKey) }
+            else { KeychainStore.delete(tokenKey) }
         }
     }
 
@@ -43,27 +45,41 @@ class APIClient {
     }
     func gatewayService(_ service: String, action: String) async throws -> String {
         let d: HMResponse = try await request("/api/hm/service", body: ["service": service, "action": action], method: "POST")
-        return d.message ?? d.error ?? "OK"
+        if let e = d.error, !e.isEmpty { throw APIError.message(e) }
+        return d.message ?? "OK"
     }
     func applyModel(gateway: String, modelID: String) async throws -> String {
         let d: HMResponse = try await request("/api/hm/apply", body: ["gateway": gateway, "model_id": modelID], method: "POST")
-        return d.message ?? d.error ?? "OK"
+        if let e = d.error, !e.isEmpty { throw APIError.message(e) }
+        return d.message ?? "OK"
     }
     func fetchModels() async throws -> [ModelInfo] {
         let d: HMResponse = try await request("/api/hm/models")
         return d.models ?? []
     }
+    // 编辑/复制时获取完整模型（含完整 api_key，列表已脱敏）
+    func fetchFullModel(id: String) async throws -> ModelInfo {
+        let d: FullModelResponse = try await request("/api/hm/models/full", body: ["id": id], method: "POST")
+        if let e = d.error, !e.isEmpty { throw APIError.message(e) }
+        guard let m = d.model else { throw APIError.message("模型不存在") }
+        return m
+    }
     func createModel(_ m: ModelInfo) async throws -> String {
         let d: HMResponse = try await request("/api/hm/models", body: m.dict(), method: "POST")
-        return d.error ?? "OK"
+        if let e = d.error, !e.isEmpty { throw APIError.message(e) }
+        return "已添加"
     }
     func updateModel(_ m: ModelInfo) async throws -> String {
-        let d: HMResponse = try await request("/api/hm/models/" + m.id, body: m.dict(), method: "PUT")
-        return d.error ?? "OK"
+        let id = m.id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? m.id
+        let d: HMResponse = try await request("/api/hm/models/" + id, body: m.dict(), method: "PUT")
+        if let e = d.error, !e.isEmpty { throw APIError.message(e) }
+        return "已保存"
     }
     func deleteModel(_ id: String) async throws -> String {
-        let d: HMResponse = try await request("/api/hm/models/" + id, method: "DELETE")
-        return d.error ?? "OK"
+        let enc = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        let d: HMResponse = try await request("/api/hm/models/" + enc, method: "DELETE")
+        if let e = d.error, !e.isEmpty { throw APIError.message(e) }
+        return "已删除"
     }
     func testModel(_ m: ModelInfo) async throws -> (ok: Bool, message: String, latency: Int, reply: String) {
         let d: TestConnectResponse = try await request("/api/hm/test-connect", body: [
@@ -89,7 +105,8 @@ class APIClient {
     }
     func applyCodexModel(modelID: String) async throws -> String {
         let d: CodexResponse = try await request("/api/hm/codex", body: ["model_id": modelID], method: "POST")
-        return d.message ?? d.error ?? "OK"
+        if let e = d.error, !e.isEmpty { throw APIError.message(e) }
+        return d.message ?? "OK"
     }
 
     // ---------- Dashboard 网页会话 ----------
@@ -99,12 +116,14 @@ class APIClient {
     }
     func dashboardAction(_ action: String) async throws -> (running: Bool, message: String) {
         let d: DashboardResponse = try await request("/api/hm/dashboard", body: ["action": action], method: "POST")
-        return (d.running ?? false, d.message ?? d.error ?? "OK")
+        if let e = d.error, !e.isEmpty { throw APIError.message(e) }
+        return (d.running ?? false, d.message ?? "OK")
     }
 
     // ---------- 底层 ----------
     private func request<T: Codable>(_ path: String, body: [String: Any]? = nil, method: String = "GET") async throws -> T {
-        var req = URLRequest(url: URL(string: baseURL + path)!)
+        guard let url = URL(string: baseURL + path) else { throw APIError.message("URL 无效") }
+        var req = URLRequest(url: url)
         req.httpMethod = method
         req.timeoutInterval = 25
         if let t = token { req.setValue(t, forHTTPHeaderField: "x-token") }
@@ -114,9 +133,31 @@ class APIClient {
         }
         let (data, resp) = try await URLSession.shared.data(for: req)
         guard let http = resp as? HTTPURLResponse else { throw APIError.network }
-        if http.statusCode == 401 { throw APIError.unauthorized }
+        // 401：会话失效 → 清 token + 通知根视图跳登录页
+        if http.statusCode == 401 {
+            token = nil
+            NotificationCenter.default.post(name: APIClient.sessionExpiredNotification, object: nil)
+            throw APIError.unauthorized
+        }
+        // 非 2xx：尝试解析服务端 error 字段，给出真实原因
+        guard (200..<300).contains(http.statusCode) else {
+            if let errObj = try? JSONDecoder().decode(ErrorBody.self, from: data), let e = errObj.error, !e.isEmpty {
+                throw APIError.message(e)
+            }
+            throw APIError.message("服务错误（HTTP \(http.statusCode)）")
+        }
         return try JSONDecoder().decode(T.self, from: data)
     }
+}
+
+struct ErrorBody: Codable {
+    let error: String?
+}
+
+struct FullModelResponse: Codable {
+    let ok: Bool?
+    let error: String?
+    let model: ModelInfo?
 }
 
 extension ModelInfo {
@@ -135,7 +176,7 @@ enum APIError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .network: return "网络错误"
-        case .unauthorized: return "未登录"
+        case .unauthorized: return "已退出登录"
         case .message(let m): return m
         }
     }
