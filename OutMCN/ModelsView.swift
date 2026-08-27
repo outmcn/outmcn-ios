@@ -281,11 +281,11 @@ struct ModelFormView: View {
                         .cornerRadius(16)
                         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
 
-                        // 模型 ID 卡片
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("模型 ID（从获取结果中选择）")
-                                .font(.system(size: 13, weight: .medium)).foregroundColor(.secondary)
+                        // 模型 ID 卡片（标签+下拉同一行）
+                        VStack(spacing: 12) {
                             HStack {
+                                Text("模型 ID")
+                                    .font(.system(size: 15))
                                 Spacer()
                                 Picker("", selection: $modelID) {
                                     Text(modelOptions.isEmpty ? "请先获取模型" : "请选择").tag("")
