@@ -82,6 +82,9 @@ struct SettingsTabView: View {
     @EnvironmentObject var session: SessionStore
     @State private var confirmLogout = false
     @State private var showAddModel = false
+    @State private var chatRunning = false
+    @State private var chatBusy = false
+    @State private var chatLoaded = false
 
     var body: some View {
         ZStack {
@@ -100,6 +103,45 @@ struct SettingsTabView: View {
 
                 ScrollView {
                     VStack(spacing: 14) {
+                        // hermes 网页聊天开关
+                        VStack(spacing: 10) {
+                            HStack {
+                                Image(systemName: "bubble.left.and.bubble.right")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.accentColor)
+                                Text("Hermes 网页聊天").font(.system(size: 15))
+                                Spacer()
+                                Circle()
+                                    .fill(chatRunning ? Color.green : Color.red)
+                                    .frame(width: 9, height: 9)
+                            }
+                            Text(chatRunning ? "运行中" : "已关闭")
+                                .font(.system(size: 13))
+                                .foregroundColor(chatRunning ? .green : .red)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.top, -4)
+                            Divider()
+                            Button {
+                                toggleChat()
+                            } label: {
+                                Group {
+                                    if chatBusy {
+                                        ProgressView().frame(maxWidth: .infinity)
+                                    } else {
+                                        Text(chatRunning ? "关闭" : "开始")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .frame(maxWidth: .infinity)
+                                    }
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(chatBusy)
+                        }
+                        .padding(16)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(16)
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
+
                         // 添加模型入口
                         Button {
                             showAddModel = true
@@ -159,6 +201,44 @@ struct SettingsTabView: View {
                 Task { await APIClient.shared.logout(); session.isLoggedIn = false }
             }
             Button("取消", role: .cancel) {}
+        }
+        .onAppear { loadChatState() }
+        .onReceive(NotificationCenter.default.publisher(for: .outmcnRefreshSettings)) { _ in
+            loadChatState()
+        }
+    }
+
+    private func loadChatState() {
+        Task {
+            do {
+                let r = try await APIClient.shared.fetchGateways()
+                DispatchQueue.main.async {
+                    if let g = r.gateways.first(where: { $0.service == "hermes-gateway" }) {
+                        chatRunning = g.status == "active"
+                    }
+                    chatLoaded = true
+                }
+            } catch {
+                // 静默失败，保持上次状态
+            }
+        }
+    }
+
+    private func toggleChat() {
+        chatBusy = true
+        let action = chatRunning ? "stop" : "start"
+        Task {
+            do {
+                _ = try await APIClient.shared.gatewayService("hermes-gateway", action: action)
+                DispatchQueue.main.async {
+                    chatBusy = false
+                    chatRunning.toggle()
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    chatBusy = false
+                }
+            }
         }
     }
 }
