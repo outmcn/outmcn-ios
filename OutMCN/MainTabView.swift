@@ -103,7 +103,7 @@ struct SettingsTabView: View {
 
                 ScrollView {
                     VStack(spacing: 14) {
-                        // hermes 网页聊天开关
+                        // hermes 网页会话开关
                         VStack(spacing: 10) {
                             HStack {
                                 Image(systemName: "bubble.left.and.bubble.right")
@@ -115,11 +115,6 @@ struct SettingsTabView: View {
                                     .fill(chatRunning ? Color.green : Color.red)
                                     .frame(width: 9, height: 9)
                             }
-                            Text(chatRunning ? "运行中" : "已关闭")
-                                .font(.system(size: 13))
-                                .foregroundColor(chatRunning ? .green : .red)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.top, -4)
                             Divider()
                             Button {
                                 toggleChat()
