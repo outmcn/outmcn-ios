@@ -87,3 +87,5 @@ struct ReceiveResponse: Codable {
     let error: String?
     let data: [MailItem]?
 }
+
+struct Empty: Codable {}

@@ -23,7 +23,11 @@ struct SettingsTabView: View {
         NavigationView {
             Form {
                 Section(header: Text("账号")) {
-                    LabeledContent("账号", value: session.username)
+                    HStack {
+                        Text("账号")
+                        Spacer()
+                        Text(session.username).foregroundColor(.secondary)
+                    }
                     Button("退出登录", role: .destructive) {
                         confirmLogout = true
                     }

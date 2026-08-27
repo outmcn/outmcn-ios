@@ -32,7 +32,7 @@ class APIClient {
     }
 
     func logout() async {
-        _ = try? await request("/api/logout", body: [:], method: "POST")
+        _ = try? await request("/api/logout", body: [:], method: "POST") as Empty
         token = nil
     }
 
