@@ -29,7 +29,7 @@ targets:
       path: OutMCN/Info.plist
       properties:
         CFBundleDisplayName: OutMCN
-        CFBundleShortVersionString: "1.8.0"
+        CFBundleShortVersionString: "1.8.1"
         CFBundleVersion: "18"
         UILaunchScreen:
           UIColorName: LaunchBackground
