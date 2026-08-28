@@ -82,9 +82,11 @@ class APIClient {
         return "已删除"
     }
     func testModel(_ m: ModelInfo) async throws -> (ok: Bool, message: String, latency: Int, reply: String) {
+        // 模型列表中的 api_key 已脱敏，测试前必须取完整配置
+        let full = try await fetchFullModel(id: m.id)
         let d: TestConnectResponse = try await request("/api/hm/test-connect", body: [
-            "base_url": m.base_url, "api_key": m.api_key,
-            "model": m.model, "api_mode": m.api_mode ?? "chat_completions"
+            "base_url": full.base_url, "api_key": full.api_key,
+            "model": full.model, "api_mode": full.api_mode ?? "chat_completions"
         ], method: "POST")
         let msg = d.message ?? d.error ?? (d.ok == true ? "连通正常" : "测试失败")
         return (d.ok == true, msg, d.latency ?? 0, d.reply ?? "")
