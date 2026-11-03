@@ -3,7 +3,7 @@ import Foundation
 /// OutMCN API 客户端：x-token 认证（同网页端）
 class APIClient {
     static let shared = APIClient()
-    let baseURL = "https://outmcn.net"
+    let baseURL = "https://home.outmcn.com"
 
     // 会话失效通知（401 时由网络层发布，根视图监听后跳登录页）
     static let sessionExpiredNotification = Notification.Name("outmcn.session.expired")
