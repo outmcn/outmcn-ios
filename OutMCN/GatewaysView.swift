@@ -15,13 +15,6 @@ struct GatewaysContentView: View {
     @State private var toast: (String, Bool)?
     @State private var pendingAction: (service: String, name: String, action: String)?
 
-    // ---- Codex ----
-    @State private var codexModel: String = ""
-    @State private var codexProvider: String = ""
-    @State private var codexReasoning: String = ""
-    @State private var selectedCodexID: String = ""
-    @State private var applying = false
-
     var body: some View {
         ZStack {
             Color(.systemGroupedBackground).ignoresSafeArea()
@@ -51,7 +44,6 @@ struct GatewaysContentView: View {
                             ForEach(gateways) { g in
                                 gatewayCard(g)
                             }
-                            codexCard
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 16)
@@ -163,69 +155,6 @@ struct GatewaysContentView: View {
         .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
     }
 
-    // Codex 也是独立卡片
-    private var codexCard: some View {
-        // 当前 Codex 模型对应 base_url（models 里按 model 匹配）
-        let currentEntry = models.first { $0.model == codexModel }
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 10) {
-                Circle().fill(Color.green).frame(width: 9, height: 9)
-                Text("Codex").font(.system(size: 16, weight: .semibold))
-                Spacer()
-            }
-            if !codexModel.isEmpty {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("模型 ID：\(codexModel)")
-                        .font(.system(.caption, design: .monospaced))
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                    if let bu = currentEntry?.base_url, !bu.isEmpty {
-                        Text(bu)
-                            .font(.system(.caption2, design: .monospaced))
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-            }
-            if models.isEmpty {
-                Text("暂无模型，请先在「模型」页添加").foregroundColor(.secondary)
-            } else {
-                HStack(spacing: 10) {
-                    Picker("模型", selection: $selectedCodexID) {
-                        Text("选择模型").tag("")
-                        ForEach(models) { m in
-                            Text("\(m.name) - \(m.model)").tag(m.id)
-                        }
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                    .frame(maxWidth: .infinity)
-                    .disabled(applying)
-
-                    Button {
-                        applyCodex()
-                    } label: {
-                        if applying {
-                            ProgressView().scaleEffect(0.8)
-                                .frame(minWidth: 46, minHeight: 30)
-                        } else {
-                            Text("应用").font(.system(size: 13))
-                                .padding(.horizontal, 14).padding(.vertical, 7)
-                                .background(Color.accentColor)
-                                .foregroundColor(.white)
-                                .cornerRadius(8)
-                        }
-                    }
-                    .disabled(applying || selectedCodexID.isEmpty)
-                }
-            }
-        }
-        .padding(16)
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(16)
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.25), lineWidth: 1))
-        .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
-    }
-
     @ViewBuilder private var toastOverlay: some View {
         if let t = toast {
             Text(t.0).font(.system(size: 13)).foregroundColor(.white)
@@ -247,15 +176,10 @@ struct GatewaysContentView: View {
             do {
                 async let gws = APIClient.shared.fetchGateways()
                 async let ms = APIClient.shared.fetchModels()
-                async let cx = APIClient.shared.fetchCodexConfig()
-                let (gwResult, modelList, codex) = try await (gws, ms, cx)
+                let (gwResult, modelList) = try await (gws, ms)
                 DispatchQueue.main.async {
                     gateways = gwResult.gateways
                     models = modelList
-                    codexModel = codex.model ?? ""
-                    codexProvider = codex.provider ?? ""
-                    codexReasoning = codex.reasoning ?? ""
-                    selectedCodexID = ""
                     loading = false
                 }
             } catch {
@@ -285,26 +209,6 @@ struct GatewaysContentView: View {
             } catch {
                 DispatchQueue.main.async {
                     busyService = nil
-                    toast = (error.localizedDescription, true)
-                }
-            }
-        }
-    }
-
-    private func applyCodex() {
-        guard !selectedCodexID.isEmpty else { return }
-        applying = true
-        Task {
-            do {
-                let msg = try await APIClient.shared.applyCodexModel(modelID: selectedCodexID)
-                DispatchQueue.main.async {
-                    applying = false
-                    toast = (msg, msg.contains("失败"))
-                    loadAll()
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    applying = false
                     toast = (error.localizedDescription, true)
                 }
             }
