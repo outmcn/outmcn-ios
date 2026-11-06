@@ -113,13 +113,15 @@ class APIClient {
 
     // ---------- Dashboard 网页会话 ----------
     func dashboardStatus() async throws -> Bool {
-        let d: DashboardResponse = try await request("/api/hm/dashboard")
-        return d.running ?? false
+        // 网页会话实际由 Hermes 网关服务管理；不能调用不存在的 /api/hm/dashboard。
+        let d: HMResponse = try await request("/api/hm/gateways")
+        return d.gateways?.first?.status == "active"
     }
     func dashboardAction(_ action: String) async throws -> (running: Bool, message: String) {
-        let d: DashboardResponse = try await request("/api/hm/dashboard", body: ["action": action], method: "POST")
-        if let e = d.error, !e.isEmpty { throw APIError.message(e) }
-        return (d.running ?? false, d.message ?? "OK")
+        // 设置页的网页会话开关对应 hermes-gateway 的 start/stop。
+        let message = try await gatewayService("hermes-gateway", action: action)
+        let running = try await dashboardStatus()
+        return (running: running, message: message)
     }
 
     // ---------- 底层 ----------
